@@ -55,6 +55,7 @@ function PlatformBadge({ platform, username }: { platform: string; username: str
   const symbol = PLATFORM_LABELS[platform] ?? '🔗';
   return (
     <span
+      title="Self-Reported — not yet auto-verified via platform API"
       style={{
         color: 'var(--text-dim)',
         fontSize: '0.75rem',
@@ -69,6 +70,20 @@ function PlatformBadge({ platform, username }: { platform: string; username: str
     >
       <span style={{ fontSize: '0.65rem' }}>{symbol}</span>
       {username}
+      <span
+        style={{
+          fontSize: '0.6rem',
+          color: 'var(--text-dim)',
+          background: 'rgba(136,136,136,0.12)',
+          border: '1px solid rgba(136,136,136,0.2)',
+          borderRadius: 3,
+          padding: '0px 4px',
+          letterSpacing: '0.04em',
+          lineHeight: 1.6,
+        }}
+      >
+        Self-Reported
+      </span>
     </span>
   );
 }

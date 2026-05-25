@@ -135,6 +135,25 @@ export default function ReservePage() {
   return (
     <div style={{ maxWidth: 840, margin: '0 auto', padding: '48px 20px' }}>
 
+      {/* ── Not Live banner ── */}
+      <div
+        style={{
+          background: 'rgba(136,136,136,0.07)',
+          border: '1px solid rgba(136,136,136,0.25)',
+          borderRadius: 8,
+          padding: '10px 16px',
+          marginBottom: 32,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: '0.8rem',
+          color: '#888',
+        }}
+      >
+        <span style={{ fontWeight: 700 }}>Not Live — Placeholder Data.</span>
+        {' '}The reserve dashboard below shows zeros. Real figures will appear when the bridge is operational.
+      </div>
+
       {/* Header */}
       <div style={{ marginBottom: 48 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>

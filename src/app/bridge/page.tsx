@@ -42,10 +42,10 @@ export default function BridgePage() {
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '40px 20px' }}>
 
-      {/* Coming-soon banner */}
+      {/* ── Concept Only banner — mandatory label per PRODUCT_SPEC mock/demo table ── */}
       <div style={{
         background: 'rgba(251,191,36,0.06)',
-        border: '1px solid rgba(251,191,36,0.25)',
+        border: '1px solid rgba(251,191,36,0.3)',
         borderRadius: 10,
         padding: '12px 20px',
         marginBottom: 32,
@@ -54,9 +54,10 @@ export default function BridgePage() {
         gap: 10,
       }}>
         <Clock size={14} style={{ color: '#fbbf24', flexShrink: 0 }} />
-        <span style={{ fontSize: '0.82rem', color: '#fbbf24' }}>
-          <strong>Coming soon</strong> — ReddBridge is in design. Gajumaru Associate Chain support
-          (required for RDD-denominated state channels) is expected Q3/Q4 2026.
+        <span style={{ fontSize: '0.82rem', color: '#d4a017' }}>
+          <strong>Concept Only — Bridge Not Active.</strong>{' '}
+          ReddBridge is a design preview. No funds can be deposited or bridged.
+          Gajumaru Associate Chain support (required) is expected Q3/Q4 2026.
         </span>
       </div>
 

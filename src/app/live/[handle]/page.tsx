@@ -31,6 +31,25 @@ export default async function LivePage({ params }: Props) {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '36px 20px' }}>
 
+      {/* ── Demo mode banner — must be visible before any public demo ── */}
+      <div
+        style={{
+          background: 'rgba(251,191,36,0.07)',
+          border: '1px solid rgba(251,191,36,0.3)',
+          borderRadius: 8,
+          padding: '10px 16px',
+          marginBottom: 24,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: '0.8rem',
+          color: '#d4a017',
+        }}
+      >
+        <span style={{ fontWeight: 700 }}>Demo Mode — Simulated Activity.</span>
+        {' '}Tip events on this page are generated locally. No real RDD transactions are shown.
+      </div>
+
       {/* Page header */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>

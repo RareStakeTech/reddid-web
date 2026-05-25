@@ -68,9 +68,25 @@ export function isValidHandle(handle: string): { valid: boolean; error?: string 
   if (/--/.test(h)) {
     return { valid: false, error: 'Handle cannot contain consecutive hyphens.' };
   }
-  // Reserved handles
-  const reserved = ['admin', 'api', 'register', 'roadmap', 'reserve', 'docs', 'reddcoin', 'redd', 'reddid', 'support', 'team', 'official'];
-  if (reserved.includes(h)) {
+  // Reserved handles — covers all route paths, brand names, and abuse/system names.
+  // Full policy: docs/IDENTITY_MODEL.md § "Handle and Namespace Policy"
+  const reserved = new Set([
+    // Route paths (every app route segment that exists or is planned)
+    'admin', 'api', 'register', 'roadmap', 'reserve', 'docs', 'explore', 'platforms',
+    'edit', 'verify', 'card', 'live', 'staking', 'bridge', 'guide', 'privacy', 'terms',
+    'search', 'agents', 'agent', 'wallet', 'wallets', 'payments', 'pay',
+    // Brand
+    'reddcoin', 'redd', 'reddid', 'reddmobile', 'reddweb', 'reddrail', 'reddbridge',
+    'reddlove', 'rarestake', 'rarestaketech',
+    // App / role
+    'support', 'team', 'official', 'me', 'settings', 'help', 'about', 'contact',
+    'status', 'tip', 'creator', 'root', 'moderator', 'mod', 'bot', 'ai', 'system',
+    // Abuse / system
+    'null', 'undefined', 'anonymous', 'superuser',
+    // Crypto confusion
+    'bitcoin', 'ethereum', 'solana', 'cardano',
+  ]);
+  if (reserved.has(h)) {
     return { valid: false, error: 'That handle is reserved.' };
   }
   return { valid: true };
