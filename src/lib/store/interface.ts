@@ -12,11 +12,13 @@ import type {
   Identity,
   SocialProof,
   AgentIdentity,
+  WalletLink,
   CreateIdentityInput,
   UpdateIdentityInput,
   CreateAgentInput,
   ReserveSnapshot,
 } from '@/lib/types';
+import type { AddWalletInput } from '@/lib/providers/wallet-link-provider';
 
 export interface DataStore {
   // ── Identity queries ────────────────────────────────────────────────────────
@@ -89,6 +91,26 @@ export interface DataStore {
     editToken: string,
     reason: string,
   ): AgentIdentity;
+
+  // ── Wallet management ───────────────────────────────────────────────────────
+  /**
+   * Add a wallet to an identity. editToken required.
+   * Throws DUPLICATE_ADDRESS if same address+chain already linked.
+   * Throws WALLET_LIMIT if identity already has 20 wallets.
+   */
+  addWallet(handle: string, editToken: string, input: AddWalletInput): WalletLink;
+
+  /**
+   * Remove a wallet entry by walletId. editToken required.
+   * Throws LAST_WALLET if this is the only remaining wallet.
+   */
+  removeWallet(handle: string, editToken: string, walletId: string): void;
+
+  /**
+   * Set a wallet as primary for its chain. Clears primary=true on siblings.
+   * editToken required.
+   */
+  setPrimaryWallet(handle: string, editToken: string, walletId: string): WalletLink;
 
   // ── Reserve ─────────────────────────────────────────────────────────────────
   /** Returns placeholder zeros until MockBridgeStatus is replaced by LiveBridgeStatus. */

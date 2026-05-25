@@ -15,12 +15,14 @@ import type {
   Identity,
   SocialProof,
   AgentIdentity,
+  WalletLink,
   CreateIdentityInput,
   UpdateIdentityInput,
   CreateAgentInput,
   ReserveSnapshot,
   DbSchema,
 } from '@/lib/types';
+import type { AddWalletInput } from '@/lib/providers/wallet-link-provider';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 const EMPTY_DB: DbSchema = { identities: [], revocationEvents: [], version: 1 };
@@ -378,6 +380,102 @@ export class JsonFileDataStore implements DataStore {
     db.identities[idx].updatedAt = now;
     this.writeDb(db);
     return revoked;
+  }
+
+  // ── Wallet management ───────────────────────────────────────────────────────
+
+  addWallet(handle: string, editToken: string, input: AddWalletInput): WalletLink {
+    const db = this.readDb();
+    const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
+    if (idx === -1) throw new Error('NOT_FOUND');
+    if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+    const wallets = db.identities[idx].wallets ?? [];
+    if (wallets.length >= 20) throw new Error('WALLET_LIMIT');
+
+    // Check for duplicate address+chain
+    const addr = input.address.trim();
+    if (wallets.some(w => w.chain === input.chain && w.address === addr && !w.revokedAt)) {
+      throw new Error('DUPLICATE_ADDRESS');
+    }
+
+    const now = new Date().toISOString();
+    // If marked primary, clear existing primary wallets on the same chain
+    if (input.primary) {
+      wallets.forEach(w => { if (w.chain === input.chain) w.primary = false; });
+    }
+
+    const wallet: WalletLink = {
+      id: this.generateId(),
+      chain: input.chain,
+      address: addr,
+      label: input.label?.trim().slice(0, 60) ?? null,
+      purpose: input.purpose,
+      visibility: input.visibility,
+      proofType: 'self-reported', // MVP: all wallets are self-reported
+      proofSignature: null,
+      proofNonce: null,
+      verified: false,
+      primary: input.primary,
+      addedAt: now,
+      revokedAt: null,
+    };
+
+    db.identities[idx].wallets = [...wallets, wallet];
+    db.identities[idx].updatedAt = now;
+    this.writeDb(db);
+    return wallet;
+  }
+
+  removeWallet(handle: string, editToken: string, walletId: string): void {
+    const db = this.readDb();
+    const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
+    if (idx === -1) throw new Error('NOT_FOUND');
+    if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+    const wallets = db.identities[idx].wallets ?? [];
+    const activeWallets = wallets.filter(w => !w.revokedAt);
+    if (activeWallets.length <= 1) throw new Error('LAST_WALLET');
+
+    const walletIdx = wallets.findIndex(w => w.id === walletId);
+    if (walletIdx === -1) throw new Error('WALLET_NOT_FOUND');
+
+    // Soft-delete: mark as revoked rather than deleting
+    const now = new Date().toISOString();
+    wallets[walletIdx] = { ...wallets[walletIdx], revokedAt: now, primary: false };
+
+    // If we just revoked the primary, promote the next available wallet on the same chain
+    const revoked = wallets[walletIdx];
+    if (!wallets.some(w => w.chain === revoked.chain && w.primary && !w.revokedAt)) {
+      const next = wallets.find(w => w.chain === revoked.chain && !w.revokedAt);
+      if (next) next.primary = true;
+    }
+
+    db.identities[idx].wallets = wallets;
+    db.identities[idx].updatedAt = now;
+    this.writeDb(db);
+  }
+
+  setPrimaryWallet(handle: string, editToken: string, walletId: string): WalletLink {
+    const db = this.readDb();
+    const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
+    if (idx === -1) throw new Error('NOT_FOUND');
+    if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+    const wallets = db.identities[idx].wallets ?? [];
+    const walletIdx = wallets.findIndex(w => w.id === walletId);
+    if (walletIdx === -1) throw new Error('WALLET_NOT_FOUND');
+    if (wallets[walletIdx].revokedAt) throw new Error('WALLET_REVOKED');
+
+    const chain = wallets[walletIdx].chain;
+    // Clear primary on all wallets of this chain, then set the target
+    wallets.forEach(w => { if (w.chain === chain) w.primary = false; });
+    wallets[walletIdx] = { ...wallets[walletIdx], primary: true };
+
+    db.identities[idx].wallets = wallets;
+    db.identities[idx].updatedAt = new Date().toISOString();
+    this.writeDb(db);
+    return wallets[walletIdx];
   }
 
   // ── Reserve ─────────────────────────────────────────────────────────────────

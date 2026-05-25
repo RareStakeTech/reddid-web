@@ -22,6 +22,8 @@ import type { SignatureVerifier } from '@/lib/providers/signature-verifier';
 import type { InstructionSigner } from '@/lib/providers/instruction-signer';
 import type { PaymentRailAdapter } from '@/lib/providers/payment-rail';
 import type { PaymentIntentProvider } from '@/lib/providers/payment-intent-provider';
+import type { SocialProofAdapter } from '@/lib/providers/social-proof-adapter';
+import type { BridgeStatusAdapter } from '@/lib/providers/bridge-status-adapter';
 
 import { MockPolicyEngine } from '@/lib/providers/mock/mock-policy-engine';
 import { MockRevocationRegistry } from '@/lib/providers/mock/mock-revocation-registry';
@@ -33,6 +35,8 @@ import { MockSignatureVerifier } from '@/lib/providers/mock/mock-signature-verif
 import { MockInstructionSigner } from '@/lib/providers/mock/mock-instruction-signer';
 import { MockPaymentRailAdapter } from '@/lib/providers/mock/mock-payment-rail';
 import { MockPaymentIntentProvider } from '@/lib/providers/mock/mock-payment-intent-provider';
+import { MockSocialProofAdapter } from '@/lib/providers/mock/mock-social-proof-adapter';
+import { MockBridgeStatusAdapter } from '@/lib/providers/mock/mock-bridge-status-adapter';
 
 export interface Providers {
   policyEngine: PolicyEngine;
@@ -47,6 +51,10 @@ export interface Providers {
   paymentRail: PaymentRailAdapter;
   /** Creates and manages PaymentIntent lifecycle (mock in-memory store in MVP). */
   paymentIntentProvider: PaymentIntentProvider;
+  /** Platform-side social proof verification (mock passthrough in v0.3). */
+  socialProofAdapter: SocialProofAdapter;
+  /** Bridge and reserve status (mock zeros in MVP; isLive: false). */
+  bridgeStatusAdapter: BridgeStatusAdapter;
 }
 
 let _providers: Providers | null = null;
@@ -71,6 +79,8 @@ export function getProviders(): Providers {
     instructionSigner: new MockInstructionSigner(),
     paymentRail: new MockPaymentRailAdapter(),
     paymentIntentProvider: new MockPaymentIntentProvider(),
+    socialProofAdapter: new MockSocialProofAdapter(),
+    bridgeStatusAdapter: new MockBridgeStatusAdapter(),
   };
   return _providers;
 }
