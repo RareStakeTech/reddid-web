@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local flat-file DB (runtime data, not source)
+/data/
+
+# claude code session files
+.claude/
