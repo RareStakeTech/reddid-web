@@ -11,8 +11,10 @@
 import type {
   Identity,
   SocialProof,
+  AgentIdentity,
   CreateIdentityInput,
   UpdateIdentityInput,
+  CreateAgentInput,
   ReserveSnapshot,
 } from '@/lib/types';
 
@@ -61,6 +63,32 @@ export interface DataStore {
     handle: string,
     proof: Omit<SocialProof, 'addedAt'>,
   ): Identity;
+
+  // ── Agent management ────────────────────────────────────────────────────────
+  /**
+   * Create a new agent attached to a parent identity.
+   * editToken must belong to the parent — never the agent.
+   * Max 10 agents per parent in MVP.
+   */
+  createAgent(
+    parentHandle: string,
+    editToken: string,
+    input: CreateAgentInput,
+  ): AgentIdentity;
+
+  /** Returns all non-revoked agents for a parent handle. */
+  getAgents(parentHandle: string): AgentIdentity[];
+
+  /**
+   * Revoke an agent (sets revokedAt, revokedReason).
+   * Does not delete the record — revocation is permanent and auditable.
+   */
+  revokeAgent(
+    parentHandle: string,
+    agentId: string,
+    editToken: string,
+    reason: string,
+  ): AgentIdentity;
 
   // ── Reserve ─────────────────────────────────────────────────────────────────
   /** Returns placeholder zeros until MockBridgeStatus is replaced by LiveBridgeStatus. */

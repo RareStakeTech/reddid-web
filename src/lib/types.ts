@@ -259,6 +259,21 @@ export interface UpdateIdentityInput {
   avatar?: string;
 }
 
+export interface CreateAgentInput {
+  agentSlug: string;
+  agentType: AgentType;
+  displayPurpose: string;
+  controllerKey: string | null;
+  allowedActions: AgentAction[];
+  allowedRails: PaymentRailId[];
+  perTxLimitRdd: number | null;
+  dailyLimitRdd: number | null;
+  monthlyLimitRdd: number | null;
+  allowedRecipients: string[] | null;
+  humanApprovalThresholdRdd: number | null;
+  expiresAt: string | null;
+}
+
 // ── Reserve ───────────────────────────────────────────────────────────────────
 
 export interface ReserveSnapshot {

@@ -14,8 +14,10 @@ import type { DataStore } from './interface';
 import type {
   Identity,
   SocialProof,
+  AgentIdentity,
   CreateIdentityInput,
   UpdateIdentityInput,
+  CreateAgentInput,
   ReserveSnapshot,
   DbSchema,
 } from '@/lib/types';
@@ -281,6 +283,101 @@ export class JsonFileDataStore implements DataStore {
     db.identities[idx].updatedAt = new Date().toISOString();
     this.writeDb(db);
     return db.identities[idx];
+  }
+
+  // ── Agent management ───────────────────────────────────────────────────────
+
+  createAgent(
+    parentHandle: string,
+    editToken: string,
+    input: CreateAgentInput,
+  ): AgentIdentity {
+    const db = this.readDb();
+    const idx = db.identities.findIndex(
+      i => i.handle === parentHandle.toLowerCase(),
+    );
+    if (idx === -1) throw new Error('NOT_FOUND');
+    if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+    const agents = db.identities[idx].agents ?? [];
+    if (agents.length >= 10) throw new Error('AGENT_LIMIT_EXCEEDED');
+
+    // Validate slug: 3-20 chars, lowercase alphanumeric + hyphens
+    const slug = input.agentSlug.trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/.test(slug) && !/^[a-z0-9]{3,20}$/.test(slug)) {
+      throw new Error('INVALID_AGENT_SLUG');
+    }
+    if (agents.some(a => a.agentSlug === slug && !a.revokedAt)) {
+      throw new Error('AGENT_SLUG_TAKEN');
+    }
+
+    const now = new Date().toISOString();
+    const agent: AgentIdentity = {
+      id: this.generateId(),
+      parentHandle: parentHandle.toLowerCase(),
+      agentSlug: slug,
+      displayHandle: `@${parentHandle.toLowerCase()}.${slug}`,
+      agentType: input.agentType,
+      displayPurpose: input.displayPurpose.trim().slice(0, 200),
+      controllerKey: input.controllerKey,
+      allowedActions: input.allowedActions,
+      allowedRails: input.allowedRails,
+      perTxLimitRdd: input.perTxLimitRdd,
+      dailyLimitRdd: input.dailyLimitRdd,
+      monthlyLimitRdd: input.monthlyLimitRdd,
+      allowedRecipients: input.allowedRecipients,
+      humanApprovalThresholdRdd: input.humanApprovalThresholdRdd,
+      expiresAt: input.expiresAt,
+      revokedAt: null,
+      revokedReason: null,
+      activityLogRef: null,
+      createdAt: now,
+    };
+
+    db.identities[idx].agents = [...agents, agent];
+    db.identities[idx].updatedAt = now;
+    this.writeDb(db);
+    return agent;
+  }
+
+  getAgents(parentHandle: string): AgentIdentity[] {
+    const db = this.readDb();
+    const identity = db.identities.find(
+      i => i.handle === parentHandle.toLowerCase(),
+    );
+    if (!identity) throw new Error('NOT_FOUND');
+    return (identity.agents ?? []).filter(a => !a.revokedAt);
+  }
+
+  revokeAgent(
+    parentHandle: string,
+    agentId: string,
+    editToken: string,
+    reason: string,
+  ): AgentIdentity {
+    const db = this.readDb();
+    const idx = db.identities.findIndex(
+      i => i.handle === parentHandle.toLowerCase(),
+    );
+    if (idx === -1) throw new Error('NOT_FOUND');
+    if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+    const agents = db.identities[idx].agents ?? [];
+    const agentIdx = agents.findIndex(a => a.id === agentId);
+    if (agentIdx === -1) throw new Error('AGENT_NOT_FOUND');
+    if (agents[agentIdx].revokedAt) throw new Error('AGENT_ALREADY_REVOKED');
+
+    const now = new Date().toISOString();
+    const revoked: AgentIdentity = {
+      ...agents[agentIdx],
+      revokedAt: now,
+      revokedReason: reason.trim().slice(0, 200) || 'Revoked by owner.',
+    };
+
+    db.identities[idx].agents = agents.map((a, i) => (i === agentIdx ? revoked : a));
+    db.identities[idx].updatedAt = now;
+    this.writeDb(db);
+    return revoked;
   }
 
   // ── Reserve ─────────────────────────────────────────────────────────────────
