@@ -12,6 +12,8 @@
 // ── Type re-exports ───────────────────────────────────────────────────────────
 export type {
   Identity,
+  PublicIdentity,
+  PublicAgent,
   SocialProof,
   CreateIdentityInput,
   UpdateIdentityInput,
@@ -27,6 +29,9 @@ export { getStore } from './store';
 import { getStore as _getStore } from './store';
 import type {
   Identity,
+  PublicIdentity,
+  AgentIdentity,
+  PublicAgent,
   SocialProof,
   CreateIdentityInput,
   UpdateIdentityInput,
@@ -83,12 +88,38 @@ export const getReserveSnapshot = () =>
   _getStore().getReserveSnapshot();
 
 /**
- * Strip private fields before returning to public API consumers.
- * Re-exported here for shim compatibility; will move to types.ts in Commit 9.
+ * Serialize an identity for public API consumption.
+ *
+ * Strips:  editToken, verificationChallenges, revocationKey, rddAddress (deprecated)
+ * Filters: wallets[] → public/unlisted only, non-revoked only
+ * Filters: agents[]  → non-revoked only, spend limits stripped
+ *
+ * Return type PublicIdentity enforces at compile time that private fields
+ * cannot be accidentally leaked downstream.
  */
-export function publicIdentity(
-  identity: Identity,
-): Omit<Identity, 'editToken' | 'verificationChallenges'> {
-  const { editToken: _et, verificationChallenges: _vc, ...pub } = identity;
-  return pub;
+export function publicIdentity(identity: Identity): PublicIdentity {
+  const {
+    editToken: _et,
+    verificationChallenges: _vc,
+    revocationKey: _rk,
+    rddAddress: _addr,
+    wallets,
+    agents,
+    ...rest
+  } = identity;
+
+  const publicWallets = (wallets ?? []).filter(
+    w => !w.revokedAt && w.visibility !== 'private',
+  );
+
+  const publicAgents: PublicAgent[] = (agents ?? [])
+    .filter(a => !a.revokedAt)
+    .map(({ perTxLimitRdd: _p, dailyLimitRdd: _d, monthlyLimitRdd: _m,
+             allowedRecipients: _r, humanApprovalThresholdRdd: _h, ...pub }) => pub as PublicAgent);
+
+  return {
+    ...rest,
+    wallets: publicWallets,
+    agents: publicAgents,
+  };
 }

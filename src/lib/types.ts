@@ -219,6 +219,38 @@ export interface Identity {
   schemaVersion?: number;            // absent → v0; 1 = tagged; 2 = expanded
 }
 
+// ── Public serialisation types ────────────────────────────────────────────────
+
+/**
+ * Public view of an agent — private spend limits removed.
+ * Callers cannot infer the owner's budget constraints from the public API.
+ */
+export type PublicAgent = Omit<
+  AgentIdentity,
+  'perTxLimitRdd' | 'dailyLimitRdd' | 'monthlyLimitRdd' |
+  'allowedRecipients' | 'humanApprovalThresholdRdd'
+>;
+
+/**
+ * Public view of an identity — sensitive fields removed or filtered.
+ *
+ * Removed entirely:  editToken, verificationChallenges, revocationKey, rddAddress (deprecated)
+ * Filtered wallets:  private-visibility entries excluded; revokedAt entries excluded
+ * Filtered agents:   spend limits stripped via PublicAgent; revokedAt entries excluded
+ */
+export type PublicIdentity = Omit<
+  Identity,
+  | 'editToken'
+  | 'verificationChallenges'
+  | 'revocationKey'
+  | 'rddAddress'
+  | 'wallets'
+  | 'agents'
+> & {
+  wallets: WalletLink[];   // public/unlisted, non-revoked only
+  agents: PublicAgent[];   // non-revoked, spend limits stripped
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
