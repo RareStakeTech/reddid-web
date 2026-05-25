@@ -21,7 +21,7 @@ import type {
 } from '@/lib/types';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
-const EMPTY_DB: DbSchema = { identities: [], version: 1 };
+const EMPTY_DB: DbSchema = { identities: [], revocationEvents: [], version: 1 };
 
 export class JsonFileDataStore implements DataStore {
   // ── Internal helpers ────────────────────────────────────────────────────────

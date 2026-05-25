@@ -272,9 +272,178 @@ export interface ReserveSnapshot {
   isLive: boolean;
 }
 
+// ── Trust levels ─────────────────────────────────────────────────────────────
+
+export type TrustLevel =
+  | 'self-reported'              // user asserts; no independent verification
+  | 'challenge-post-verified'    // 8-char hex challenge confirmed in a public post
+  | 'wallet-signature-verified'  // ECDSA / ed25519 signature verified server-side
+  | 'community-attested'         // multiple community members attested
+  | 'project-attested'           // signed by ReddCoin project or named partner
+  | 'third-party-credentialed'   // external verifier credential
+  | 'disputed'                   // flagged by community
+  | 'revoked';                   // deliberately removed
+
+// ── Credential ────────────────────────────────────────────────────────────────
+
+export type CredentialType =
+  | 'WalletOwnershipCredential'
+  | 'SocialProofCredential'
+  | 'CreatorCredential'
+  | 'ReddHeadContributorCredential'
+  | 'AgentAuthorizationCredential'
+  | 'AgentRevocationCredential'
+  | 'TipReceiptCredential'
+  | 'BridgeReserveAttestationCredential'
+  | 'CommunityModerationCredential';
+
+export type CredentialSource =
+  | 'self-asserted'        // subject asserts their own claim
+  | 'wallet-signature'     // proven via cryptographic signature
+  | 'challenge-post'       // challenge code confirmed in a public post
+  | 'community-attestation'// signed by multiple community members
+  | 'project-attestation'  // signed by ReddCoin project or partner
+  | 'third-party'          // external issuer
+  | 'mock';                // prototype/demo — must be labeled in UI
+
+export type CredentialStatus = 'draft' | 'active' | 'suspended' | 'revoked' | 'expired';
+
+export type CredentialProofType =
+  | 'none'
+  | 'data-integrity' // W3C Data Integrity Proof — future
+  | 'jwt'            // JWT-VC — future
+  | 'rdd-message'    // ReddCoin verifymessage ECDSA — planned v0.5
+  | 'evm-signature'  // EIP-191 personal_sign — planned v0.6
+  | 'gajumaru-grids' // GRIDS instruction signature — planned v1.0
+  | 'mock';          // prototype — must be labeled
+
+export interface CredentialProof {
+  type: CredentialProofType;
+  verificationMethod: string | null; // address or pubkey that signed
+  proofValue: string | null;
+  createdAt: string;
+}
+
+export interface Credential {
+  id: string;
+  type: CredentialType;
+  issuer: string;                  // handle or 'reddid-system'
+  subject: string;                 // handle this credential is about
+  claims: Record<string, unknown>; // type-specific data
+  proof: CredentialProof | null;   // null = self-asserted, no cryptographic proof
+  status: CredentialStatus;
+  visibility: VisibilityLevel;
+  issuedAt: string;
+  expiresAt: string | null;
+  revocationRef: string | null;    // id of RevocationEvent if revoked
+  source: CredentialSource;
+  trustLevel: TrustLevel;          // computed by TrustEvaluator at issue time
+}
+
+// ── Presentation ──────────────────────────────────────────────────────────────
+
+export interface Presentation {
+  id: string;
+  holder: string;                  // handle of the presenter
+  credentialIds: string[];         // which credentials are included
+  purpose: string;                 // human-readable reason for presenting
+  audience: string | null;         // who the presentation is for
+  createdAt: string;
+  expiresAt: string | null;
+  proof: CredentialProof | null;
+}
+
+// ── ActionEnvelope ────────────────────────────────────────────────────────────
+
+export type ActionEnvelopeType =
+  | 'login'              // Digi-ID style challenge-response login
+  | 'wallet-link'        // prove control of an RDD or EVM address
+  | 'tip'                // initiate a tip to a handle
+  | 'payment-request'    // request payment from a payer
+  | 'agent-action'       // agent acting within its allowedActions
+  | 'agent-approval'     // human approving an agent action above threshold
+  | 'revoke-agent'       // owner revoking an agent
+  | 'social-proof'       // submitting a challenge-response proof
+  | 'credential-issue'   // issuing a credential to a subject
+  | 'credential-present' // presenting selected credentials
+  | 'bridge-action';     // future: bridge deposit/withdrawal (NOT LIVE)
+
+export type SignatureType =
+  | 'none'
+  | 'rdd-message'      // ReddCoin Core verifymessage ECDSA — planned v0.5
+  | 'evm-eip191'       // Ethereum EIP-191 personal_sign — planned v0.6
+  | 'gajumaru-grids'   // GRIDS instruction signature — planned v1.0
+  | 'ed25519'          // EdDSA — future W3C DID verification
+  | 'mock';            // prototype — must be labeled
+
+export type ActionEnvelopeStatus =
+  | 'draft'
+  | 'pending-signature'
+  | 'signed'
+  | 'submitted'
+  | 'confirmed'
+  | 'expired'
+  | 'cancelled'
+  | 'failed';
+
+export interface ActionEnvelope {
+  id: string;
+  type: ActionEnvelopeType;
+  domain: string;               // e.g. "redd.love" — binds envelope to origin
+  origin: string;               // full origin URL
+  requestedBy: string | null;   // handle or service that created the request
+  subjectHandle: string | null; // the ReddID handle this action concerns
+  agentId: string | null;       // if an agent is acting on behalf of the owner
+  /**
+   * REQUIRED — plain English description of what the user is approving.
+   * Must never be empty. Must be shown to the user before signing.
+   */
+  humanReadableSummary: string;
+  payload: Record<string, unknown>; // action-specific data
+  nonce: string;                // 16-char hex — unique per envelope
+  createdAt: string;
+  expiresAt: string;
+  requiredSigner: string | null; // address or pubkey that must sign
+  signature: string | null;
+  signatureType: SignatureType;
+  status: ActionEnvelopeStatus;
+}
+
+// ── PolicyDecision ────────────────────────────────────────────────────────────
+
+export interface PolicyDecision {
+  allowed: boolean;
+  reason: string;
+  requiresHumanApproval: boolean;
+  violatedRule: string | null;  // which policy rule blocked this action
+}
+
+// ── RevocationEvent ───────────────────────────────────────────────────────────
+
+export type RevocationTargetType =
+  | 'identity'
+  | 'wallet'
+  | 'social-proof'
+  | 'credential'
+  | 'agent'
+  | 'payment-intent'
+  | 'action-envelope';
+
+export interface RevocationEvent {
+  id: string;
+  targetType: RevocationTargetType;
+  targetId: string;          // id of the revoked record
+  targetHandle: string;      // handle this event concerns
+  revokedBy: string;         // handle or 'reddid-system'
+  reason: string;            // public reason string, max 200 chars
+  createdAt: string;
+  visibility: 'public' | 'private';
+}
+
 // ── Internal DB schema ────────────────────────────────────────────────────────
 
 export interface DbSchema {
   identities: Identity[];
+  revocationEvents: RevocationEvent[];
   version: number;
 }
