@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, Users } from 'lucide-react';
+import { LIVE_PLATFORMS, PLATFORM_MAP } from '@/lib/platforms';
 
 interface PublicIdentity {
   handle: string;
@@ -12,11 +13,12 @@ interface PublicIdentity {
   createdAt: string;
 }
 
-const PLATFORM_ICON: Record<string, string> = {
-  twitter: '𝕏', youtube: '▶', reddit: '●', twitch: '⬟', instagram: '◈', tiktok: '♪', github: '⌥',
-};
+// Derived from the canonical registry — kept in sync automatically
+const PLATFORM_ICON: Record<string, string> = Object.fromEntries(
+  LIVE_PLATFORMS.map(p => [p.id, p.icon])
+);
 
-const ALL_PLATFORMS = ['twitter', 'youtube', 'reddit', 'twitch', 'instagram', 'tiktok', 'github'];
+const ALL_PLATFORMS = LIVE_PLATFORMS.map(p => p.id);
 
 export default function ExplorePage() {
   const [identities, setIdentities] = useState<PublicIdentity[]>([]);
@@ -92,7 +94,7 @@ export default function ExplorePage() {
         >
           <option value="">All platforms</option>
           {ALL_PLATFORMS.map(p => (
-            <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+            <option key={p} value={p}>{PLATFORM_MAP[p]?.name ?? p}</option>
           ))}
         </select>
 

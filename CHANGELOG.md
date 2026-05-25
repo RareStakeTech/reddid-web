@@ -15,6 +15,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.0] — 2026-05-25
+
+### Added
+- **`src/lib/platforms.ts`** — canonical platform registry, single source of truth for all supported platforms; exports `PLATFORMS` (17 entries), `PLATFORM_MAP`, `LIVE_PLATFORMS`, `ALL_PLATFORM_IDS`, `platformIcon()`, `platformProfileUrl()`; each entry carries id, name, icon, color, status (live/planned/beta), category, profileUrl function, description, federated flag, placeholder
+- **`/platforms` page** — public-facing support matrix; groups all 17 platforms by category (mainstream, creator-aligned, decentralized, creator, developer); status chips (Live/Planned/Beta) with counts; per-card: icon, name, left-colored border, description, id badge, federated tag, placeholder example; plugin architecture section with 3-step contract explainer; CTAs to PLUGINS.md, GitHub issue tracker, and open PR
+- **`GET /api/search`** — fuzzy search endpoint; `?q=query[&limit=20]`; scores identities across handle (exact +100, prefix +60, contains +30), displayName (+80/50/25), socialProof usernames (+70/40/20), bio (+10); returns ranked `results` array with `publicIdentity()` stripping applied; max 50 results per call
+- **NavBar** — added Platforms link (`Layers` icon) between Explore and Bridge
+- **Footer** — added Platforms link between Reserve Model and ReddBridge
+
+### Changed
+- `explore/page.tsx` — `PLATFORM_ICON` and `ALL_PLATFORMS` now derived from `LIVE_PLATFORMS` in `platforms.ts` instead of being hardcoded; platform filter drop-down uses `PLATFORM_MAP[id].name` for display labels (e.g. "Bluesky (AT Protocol)" instead of "bluesky")
+
+---
+
 ## [0.3.0] — 2026-05-25
 
 ### Added

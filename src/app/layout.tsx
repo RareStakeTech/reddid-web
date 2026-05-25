@@ -58,6 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Reserve Model
           </a>
           <span> · </span>
+          <a href="/platforms" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
+            Platforms
+          </a>
+          <span> · </span>
           <a href="/bridge" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
             ReddBridge
           </a>

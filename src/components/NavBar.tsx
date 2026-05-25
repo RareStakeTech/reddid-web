@@ -3,17 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X, ArrowLeftRight, Users, Zap } from 'lucide-react';
+import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X, ArrowLeftRight, Users, Zap, Layers } from 'lucide-react';
 
 const NAV_LINKS = [
-  { href: '/',         label: 'Home',     Icon: Home },
-  { href: '/register', label: 'Register', Icon: PenLine },
-  { href: '/explore',  label: 'Explore',  Icon: Users },
-  { href: '/bridge',   label: 'Bridge',   Icon: ArrowLeftRight },
-  { href: '/staking',  label: 'Staking',  Icon: Zap },
-  { href: '/roadmap',  label: 'Roadmap',  Icon: Map },
-  { href: '/reserve',  label: 'Reserve',  Icon: BarChart2 },
-  { href: '/docs',     label: 'Docs',     Icon: BookOpen },
+  { href: '/',          label: 'Home',      Icon: Home },
+  { href: '/register',  label: 'Register',  Icon: PenLine },
+  { href: '/explore',   label: 'Explore',   Icon: Users },
+  { href: '/platforms', label: 'Platforms', Icon: Layers },
+  { href: '/bridge',    label: 'Bridge',    Icon: ArrowLeftRight },
+  { href: '/staking',   label: 'Staking',   Icon: Zap },
+  { href: '/roadmap',   label: 'Roadmap',   Icon: Map },
+  { href: '/reserve',   label: 'Reserve',   Icon: BarChart2 },
+  { href: '/docs',      label: 'Docs',      Icon: BookOpen },
 ];
 
 export default function NavBar() {
