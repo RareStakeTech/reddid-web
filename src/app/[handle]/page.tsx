@@ -7,6 +7,8 @@ import { getAddressType, buildBip21Uri } from '@/lib/validation';
 import CopyButton from '@/components/CopyButton';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import ShareButton from '@/components/ShareButton';
+import LiveBalance from '@/components/LiveBalance';
+import EditLink from '@/components/EditLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -273,6 +275,7 @@ export default async function TipPage({ params, searchParams }: Props) {
             </code>
             <CopyButton text={identity.rddAddress} label="Address" />
           </div>
+          <LiveBalance address={identity.rddAddress} />
           <p style={{ marginTop: 7, fontSize: '0.71rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>
             Open your ReddCoin wallet and send any amount of Ɍ RDD to this address.
             No account needed — standard network fee only.
@@ -362,8 +365,15 @@ export default async function TipPage({ params, searchParams }: Props) {
               Ɍ Native RDD · No wrapped tokens
             </span>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <ShareButton url={pageUrl} title={`Tip @${identity.handle} with Ɍ RDD`} />
+            <Link
+              href={`/live/${identity.handle}`}
+              style={{ fontSize: '0.75rem', color: 'var(--redd-red)', textDecoration: 'none', fontFamily: "'Rubik', sans-serif", fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              ▶ Live session
+            </Link>
+            <EditLink handle={identity.handle} />
             <Link
               href="/register"
               style={{

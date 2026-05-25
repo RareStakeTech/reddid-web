@@ -138,6 +138,10 @@ export default function RegisterPage() {
         setError(data.error ?? 'Registration failed. Please try again.');
         return;
       }
+      // Store editToken in localStorage — it's shown once and never in GET responses
+      if (data.editToken) {
+        localStorage.setItem(`reddid_edittoken_${form.handle}`, data.editToken);
+      }
       router.push(`/${form.handle}?new=1`);
     } catch {
       setError('Network error. Please check your connection and try again.');

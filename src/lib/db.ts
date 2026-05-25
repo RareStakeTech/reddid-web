@@ -1,15 +1,15 @@
 /**
  * Lightweight JSON file database for ReddID Next v0.1 prototype.
  *
- * This is intentionally simple — a flat JSON file with in-process
- * read/write. It is adequate for a single-server prototype and easy
- * to swap for Turso (LibSQL), Postgres, or any other DB for production.
+ * Intentionally simple — a flat JSON file with in-process read/write.
+ * Easy to swap for Turso (LibSQL), Postgres, or any other DB for production.
  *
  * NOT safe for concurrent multi-process writes. Single Next.js process only.
  */
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
@@ -21,6 +21,10 @@ export interface Identity {
   bio: string | null;
   website: string | null;
   socialProofs: SocialProof[];
+  /** 16-char hex token returned once at registration. Used to authorise edits. */
+  editToken: string;
+  /** platform → 8-char hex challenge code, pending proof submission */
+  verificationChallenges: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,6 +63,10 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
+function generateToken(bytes = 8): string {
+  return crypto.randomBytes(bytes).toString('hex');
+}
+
 // ── Identities ─────────────────────────────────────────────────────────────
 
 export function getIdentityByHandle(handle: string): Identity | null {
@@ -69,6 +77,28 @@ export function getIdentityByHandle(handle: string): Identity | null {
 export function getIdentityByAddress(rddAddress: string): Identity | null {
   const db = readDb();
   return db.identities.find(i => i.rddAddress === rddAddress) ?? null;
+}
+
+/**
+ * Find an identity by a linked social platform + username.
+ * Checks socialProofs first, then falls back to handle === username.
+ */
+export function getIdentityBySocial(platform: string, username: string): Identity | null {
+  const db = readDb();
+  const lowerUser = username.toLowerCase();
+  const lowerPlat = platform.toLowerCase();
+
+  // Primary: explicit social proof match
+  const bySocial = db.identities.find(i =>
+    i.socialProofs.some(
+      p => p.platform.toLowerCase() === lowerPlat &&
+           p.username.toLowerCase() === lowerUser
+    )
+  );
+  if (bySocial) return bySocial;
+
+  // Fallback: handle matches username (creators who used their social name as handle)
+  return db.identities.find(i => i.handle === lowerUser) ?? null;
 }
 
 export function getAllIdentities(): Identity[] {
@@ -101,12 +131,99 @@ export function createIdentity(input: CreateIdentityInput): Identity {
     bio: input.bio?.trim().slice(0, 160) || null,
     website: input.website?.trim() || null,
     socialProofs: [],
+    editToken: generateToken(8),            // 16-char hex
+    verificationChallenges: {},
     createdAt: now,
     updatedAt: now,
   };
   db.identities.push(identity);
   writeDb(db);
   return identity;
+}
+
+export interface UpdateIdentityInput {
+  displayName?: string;
+  bio?: string;
+  website?: string;
+}
+
+/**
+ * Update mutable profile fields. Requires correct editToken.
+ */
+export function updateIdentity(
+  handle: string,
+  editToken: string,
+  updates: UpdateIdentityInput
+): Identity {
+  const db = readDb();
+  const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
+  if (idx === -1) throw new Error('NOT_FOUND');
+  if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+  if (updates.displayName !== undefined)
+    db.identities[idx].displayName = updates.displayName.trim().slice(0, 60) || null;
+  if (updates.bio !== undefined)
+    db.identities[idx].bio = updates.bio.trim().slice(0, 160) || null;
+  if (updates.website !== undefined)
+    db.identities[idx].website = updates.website.trim() || null;
+
+  db.identities[idx].updatedAt = new Date().toISOString();
+  writeDb(db);
+  return db.identities[idx];
+}
+
+/**
+ * Generate (or regenerate) a verification challenge code for a platform.
+ * Returns the 8-char hex code. Requires editToken.
+ */
+export function createVerificationChallenge(
+  handle: string,
+  platform: string,
+  editToken: string
+): string {
+  const db = readDb();
+  const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
+  if (idx === -1) throw new Error('NOT_FOUND');
+  if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+  const code = generateToken(4); // 8-char hex
+  db.identities[idx].verificationChallenges[platform.toLowerCase()] = code;
+  db.identities[idx].updatedAt = new Date().toISOString();
+  writeDb(db);
+  return code;
+}
+
+/**
+ * Record a social proof after user claims to have posted the challenge.
+ * v0.1: trust-based (stores what user submits). v0.2 will verify via platform API.
+ */
+export function confirmSocialProof(
+  handle: string,
+  platform: string,
+  username: string,
+  proofUrl: string,
+  editToken: string
+): Identity {
+  const db = readDb();
+  const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
+  if (idx === -1) throw new Error('NOT_FOUND');
+  if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
+
+  // Remove existing proof for this platform, then add new one
+  db.identities[idx].socialProofs = db.identities[idx].socialProofs.filter(
+    p => p.platform.toLowerCase() !== platform.toLowerCase()
+  );
+  db.identities[idx].socialProofs.push({
+    platform: platform.toLowerCase(),
+    username: username.trim(),
+    proofUrl: proofUrl.trim() || null,
+    addedAt: new Date().toISOString(),
+  });
+  // Clear the challenge once used
+  delete db.identities[idx].verificationChallenges[platform.toLowerCase()];
+  db.identities[idx].updatedAt = new Date().toISOString();
+  writeDb(db);
+  return db.identities[idx];
 }
 
 export function addSocialProof(
@@ -117,7 +234,6 @@ export function addSocialProof(
   const idx = db.identities.findIndex(i => i.handle === handle.toLowerCase());
   if (idx === -1) throw new Error(`Identity @${handle} not found.`);
 
-  // Replace existing proof for the same platform
   db.identities[idx].socialProofs = db.identities[idx].socialProofs.filter(
     p => p.platform !== proof.platform
   );
@@ -127,7 +243,13 @@ export function addSocialProof(
   return db.identities[idx];
 }
 
-// ── Reserve (placeholder for bridge data) ──────────────────────────────────
+/** Strip the editToken before returning to public API consumers. */
+export function publicIdentity(identity: Identity): Omit<Identity, 'editToken' | 'verificationChallenges'> {
+  const { editToken: _et, verificationChallenges: _vc, ...pub } = identity;
+  return pub;
+}
+
+// ── Reserve (placeholder for bridge data) ─────────────────────────────────
 
 export interface ReserveSnapshot {
   nativeRddReserve: number;
@@ -140,7 +262,6 @@ export interface ReserveSnapshot {
   isLive: boolean;
 }
 
-/** Placeholder reserve data — replaced by real indexer data when bridge is live. */
 export function getReserveSnapshot(): ReserveSnapshot {
   return {
     nativeRddReserve: 0,

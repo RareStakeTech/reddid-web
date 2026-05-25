@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createIdentity, getIdentityByHandle } from '@/lib/db';
+import { createIdentity, getIdentityByHandle, publicIdentity } from '@/lib/db';
 import { isValidHandle, isValidRddAddress, isValidUrl, sanitizeHandle } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
@@ -54,7 +54,12 @@ export async function POST(request: NextRequest) {
       bio: bio || undefined,
       website: website || undefined,
     });
-    return Response.json({ success: true, identity }, { status: 201 });
+    // Return editToken once — client must save it; it won't appear in GET responses
+    return Response.json({
+      success: true,
+      identity: publicIdentity(identity),
+      editToken: identity.editToken,
+    }, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Registration failed.';
     return Response.json({ error: msg }, { status: 500 });
