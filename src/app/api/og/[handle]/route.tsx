@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getIdentityByHandle, publicIdentity } from '@/lib/db';
 import { sanitizeHandle, getAddressType } from '@/lib/validation';
 
-export const runtime = 'edge';
+// Note: ImageResponse works on Node.js runtime too — edge runtime can't use fs/path from db.ts
 export const dynamic = 'force-dynamic';
 
 // Edge runtime can't use Node fs — use a data URL for the font weight fallback
