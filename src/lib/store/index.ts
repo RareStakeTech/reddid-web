@@ -14,11 +14,14 @@
 
 import type { DataStore } from './interface';
 import { JsonFileDataStore } from './json-file-store';
+import { runMigrations } from '@/lib/migrate';
 
 let _store: DataStore | null = null;
 
 export function getStore(): DataStore {
   if (!_store) {
+    // Run migrations exactly once per process before any data access.
+    runMigrations();
     _store = new JsonFileDataStore();
   }
   return _store;
