@@ -1,65 +1,245 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { AtSign, Zap, Link2, Bot, Scale } from 'lucide-react';
+import { countIdentities } from '@/lib/db';
+import CountUp from '@/components/CountUp';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+function StatCard({ value, animateTarget, label }: { value: string | number; animateTarget?: number; label: string }) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 10,
+        padding: '20px 28px',
+        textAlign: 'center',
+        minWidth: 140,
+      }}
+    >
+      <div style={{ fontSize: '1.8rem', fontWeight: 700, fontFamily: "'Rubik', sans-serif", color: 'var(--text-primary)' }}>
+        {animateTarget !== undefined ? <CountUp target={animateTarget} /> : value}
+      </div>
+      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4, letterSpacing: '0.04em' }}>{label}</div>
+    </div>
+  );
+}
+
+const FEATURES = [
+  {
+    Icon: AtSign,
+    title: 'Human-readable @handles',
+    desc: 'Register @yourname and share a clean tip URL instead of a raw Ɍ RDD address.',
+  },
+  {
+    Icon: Zap,
+    title: 'Instant tip pages',
+    desc: 'redd.love/@yourname — a public page with your RDD address and scannable BIP21 QR code, ready for anyone to tip.',
+  },
+  {
+    Icon: Link2,
+    title: 'Social proofs — coming v0.2',
+    desc: 'Link your Twitter, GitHub, Reddit — cryptographically provable, no KYC required.',
+  },
+  {
+    Icon: Bot,
+    title: 'Agent delegation — coming v0.3',
+    desc: 'Authorize AI agents and bots to tip on your behalf — with strict limits, explicit disclosure, and instant revocation.',
+  },
+  {
+    Icon: Scale,
+    title: 'Transparent reserve model',
+    desc: 'When ReddRail launches, all represented Ɍ RDD will be backed by native RDD in publicly auditable reserve wallets.',
+  },
+];
+
+export default async function HomePage() {
+  const identityCount = countIdentities();
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '60px 20px' }}>
+
+      {/* Hero */}
+      <div style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div style={{ marginBottom: 16 }}>
+          <span
+            style={{
+              background: 'var(--redd-red-pale)',
+              border: '1px solid var(--redd-red-border)',
+              color: 'var(--redd-red-light)',
+              fontSize: '0.72rem',
+              fontFamily: "'Rubik', sans-serif",
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              padding: '4px 14px',
+              borderRadius: 20,
+              textTransform: 'uppercase',
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            v0.1 Public Beta · Native Ɍ RDD only
+          </span>
         </div>
-      </main>
+        <h1
+          style={{
+            fontSize: 'clamp(2rem, 6vw, 3.2rem)',
+            fontWeight: 700,
+            fontFamily: "'Rubik', sans-serif",
+            color: 'var(--text-primary)',
+            lineHeight: 1.15,
+            marginBottom: 18,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Your @handle for
+          <br />
+          <span style={{ color: 'var(--redd-red)' }}>Ɍ ReddCoin social payments</span>
+        </h1>
+        <p
+          style={{
+            fontSize: '1.05rem',
+            color: 'var(--text-muted)',
+            maxWidth: 520,
+            margin: '0 auto 32px',
+            lineHeight: 1.75,
+          }}
+        >
+          Register a human-readable identity. Link your Ɍ RDD wallet.
+          Let anyone tip you by name — no long addresses, no friction.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link
+            href="/register"
+            style={{
+              background: 'var(--redd-red)',
+              color: 'white',
+              textDecoration: 'none',
+              fontFamily: "'Rubik', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              padding: '12px 28px',
+              borderRadius: 8,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'background 0.15s',
+            }}
+          >
+            <AtSign size={16} />
+            Register @handle
+          </Link>
+          <Link
+            href="/roadmap"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              fontFamily: "'Rubik', sans-serif",
+              fontWeight: 500,
+              fontSize: '0.95rem',
+              padding: '12px 24px',
+              borderRadius: 8,
+              display: 'inline-block',
+            }}
+          >
+            View Roadmap →
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 64, flexWrap: 'wrap' }}>
+        <StatCard value={identityCount} animateTarget={identityCount} label="Registered @handles" />
+        <StatCard value="v0.1" label="Current version" />
+        <StatCard value="Ɍ Native RDD" label="Root asset" />
+        <StatCard value="Open" label="Registration" />
+      </div>
+
+      {/* Features */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
+          padding: '36px',
+          marginBottom: 48,
+        }}
+      >
+        <h2 style={{ fontWeight: 700, fontFamily: "'Rubik', sans-serif", fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: 28 }}>
+          What ReddID Next does
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {FEATURES.map(({ Icon, title, desc }) => (
+            <div key={title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  background: 'var(--redd-red-pale)',
+                  border: '1px solid var(--redd-red-border)',
+                  borderRadius: 8,
+                  padding: '8px',
+                  lineHeight: 0,
+                  flexShrink: 0,
+                  color: 'var(--redd-red)',
+                }}
+              >
+                <Icon size={18} strokeWidth={1.75} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, fontFamily: "'Rubik', sans-serif", fontSize: '0.95rem', color: 'var(--text-primary)' }}>{title}</div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.6 }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Beta notice */}
+      <div
+        style={{
+          border: '1px solid rgba(234,179,8,0.3)',
+          background: 'rgba(234,179,8,0.04)',
+          borderRadius: 10,
+          padding: '20px 24px',
+          marginBottom: 40,
+        }}
+      >
+        <div style={{ fontWeight: 600, fontFamily: "'Rubik', sans-serif", color: '#f0c040', fontSize: '0.85rem', marginBottom: 6 }}>
+          ⚠ Public Beta — v0.1
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.7, margin: 0 }}>
+          This is an early prototype. In v0.1, handles are registered with format validation only —
+          cryptographic proof of address ownership ships in v0.2. Do not register a handle you cannot
+          reclaim if needed. No payment channels are live yet; tip pages display your Ɍ RDD address for
+          direct wallet-to-wallet tips. ReddRail (high-throughput social-payment channels) will be
+          integrated once Gajumaru Associate Chain tooling is available.
+        </p>
+      </div>
+
+      {/* Quick links */}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {[
+          { href: '/reserve', label: '→ Reserve model' },
+          { href: '/roadmap', label: '→ Build roadmap' },
+          { href: '/docs',    label: '→ Architecture' },
+        ].map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            style={{
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              fontFamily: "'Rubik', sans-serif",
+              fontSize: '0.85rem',
+              padding: '8px 14px',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+            }}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

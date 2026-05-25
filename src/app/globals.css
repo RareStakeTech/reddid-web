@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Official ReddCoin brand palette — brand.reddcoin.com */
+  --redd-red: #E30613;
+  --redd-red-dark: #B80510;
+  --redd-red-deeper: #8C040C;
+  --redd-red-light: #F9596A;
+  --redd-red-pale: rgba(227,6,19,0.08);
+  --redd-red-border: rgba(227,6,19,0.25);
+
+  --bg-base: #080808;
+  --bg-card: #111111;
+  --bg-card-hover: #181818;
+  --border: #252525;
+  --border-subtle: #1a1a1a;
+  --text-primary: #f0f0f0;
+  --text-muted: #888888;
+  --text-dim: #444444;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+* { box-sizing: border-box; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3, h4, h5, h6,
+.ui-font {
+  font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.font-address {
+  font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+/* QR code needs white bg for reliable scanning */
+.qr-wrapper {
+  background: white;
+  padding: 14px;
+  border-radius: 8px;
+  display: inline-block;
+  line-height: 0;
+}
+
+/* WCAG 2.1 AA focus — brand.reddcoin.com spec */
+:focus-visible {
+  outline: 3px solid var(--redd-red);
+  outline-offset: 3px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 3px solid var(--redd-red);
+  outline-offset: 2px;
+}
+
+/* Availability indicator */
+.handle-available { color: #4ade80; }
+.handle-taken     { color: #f87171; }
+.handle-checking  { color: var(--text-dim); }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
