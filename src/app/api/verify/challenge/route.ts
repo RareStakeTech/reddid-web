@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { createVerificationChallenge } from '@/lib/db';
 import { sanitizeHandle } from '@/lib/validation';
-import { PLATFORM_MAP } from '@/lib/platforms';
+import { ALL_PLATFORM_IDS } from '@/lib/platforms';
 
 /**
  * POST /api/verify/challenge
@@ -11,8 +11,8 @@ import { PLATFORM_MAP } from '@/lib/platforms';
  * Generates (or regenerates) an 8-char hex challenge code the user must post
  * publicly on the given platform to prove they control that account.
  *
- * Supported platforms are driven by PLATFORM_MAP in platforms.ts — the same
- * source of truth used by the /platforms page and Love Button.
+ * Supported platforms are the live entries in platforms.ts — planned platforms
+ * are excluded until their UI support ships.
  */
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
@@ -30,11 +30,10 @@ export async function POST(request: NextRequest) {
   if (!platform)  return Response.json({ error: 'platform is required.' },  { status: 400 });
   if (!editToken) return Response.json({ error: 'editToken is required.' }, { status: 401 });
 
-  // Validate against the canonical platform registry — not a hardcoded list
-  if (!PLATFORM_MAP[platform]) {
-    const known = Object.keys(PLATFORM_MAP).sort().join(', ');
+  // Validate against live platforms only — planned platforms are not yet supported
+  if (!ALL_PLATFORM_IDS.includes(platform)) {
     return Response.json(
-      { error: `Unsupported platform. Known platforms: ${known}` },
+      { error: `Unsupported platform. Supported platforms: ${ALL_PLATFORM_IDS.join(', ')}` },
       { status: 422 },
     );
   }
