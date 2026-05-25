@@ -8,10 +8,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- Platform API verification for social proofs (v0.3 — check bio/posts for challenge code via platform APIs)
+- Platform API verification for social proofs (v0.5 — check bio/posts for challenge code via platform APIs)
 - ReddRail state channel sessions (real Gajumaru Associate Chain integration; expected Q3/Q4 2026)
 - AI-agent payment policies (v0.4)
 - PWA icons (`/icon-192.png`, `/icon-512.png`) — placeholder manifest already in place
+- Wallet signature verification (ECDSA, reddcoinjs-lib) — v0.5
+- `DELETE /api/identities/[handle]` self-service account deletion — v0.5
+- Automated test suite (vitest + Testing Library) — v0.5
+
+---
+
+## [0.4.1] — 2026-05-25
+
+### Added
+- **`/privacy` page** — 10-section privacy policy required for Chrome Web Store and Firefox AMO store submission; covers: what is collected at registration (handle, RDD address, optional social links), what is never collected (private keys, passwords, email, analytics, telemetry), server log retention (30 days, IP hashed for abuse reports), extension local-storage contents (5-min cache, 20-entry history, settings), social proof honesty (challenge records what was declared, not independently verified), data deletion contact, children's privacy, governing law; linked from footer and register form
+- **`/terms` page** — 10-section terms of use; establishes ReddID as non-custodial directory (not a money transmitter); acceptable use rules (no impersonation, no bulk squatting, no scraping for commercial use); beta disclaimer (v0.3, no uptime guarantee, no crypto loss liability); limitation of liability clause; linked from footer and register form
+- **Register page — Social Accounts section** — collapsible "Social Accounts" section below the Website field; platform dropdown populated from all 13 `LIVE_PLATFORMS` with icon and name; username input with platform-specific placeholder; add/remove rows (max 10); blank rows stripped before submission; legal footnote on register form links to `/terms` and `/privacy`
+- **`/api/identities` POST — `socialLinks` field** — register endpoint now accepts optional `socialLinks: { platform, username }[]` in the POST body; validates each entry against `ALL_PLATFORM_IDS` from `platforms.ts`; sanitises usernames (trim, max 100 chars); max 10 links; calls `addSocialProof()` for each valid link after identity creation with `proofMethod: 'self-reported'`, `verificationStatus: 'pending'`, `visibility: 'public'`; failures are non-fatal (loop continues)
+- **`/pay/[handle]` — BIP21 payment request page** — focused payment UX distinct from the full tip page; server component resolves identity via `getIdentityByHandle()`, derives address via `primaryRddAddress()`, 404 if no address; `PayClient` (client component) manages: preset amount chips (Ɍ 10/25/50/100/250/500, toggle to deselect), custom amount number input (step 0.000001), live QR code regeneration via `buildBip21Uri(addr, amount)`, "Open in wallet" anchor tag opening the `reddcoin:` URI, copy address / copy Ɍ URI buttons with 1.6 s "Copied!" feedback, full address display in monospace, link back to the full tip page; address type badge (P2PKH Legacy / bech32 SegWit) in page header; non-custodial footer note
+
+### Changed
+- **`[handle]/page.tsx`** — added "Ɍ Pay" link in card footer alongside Share, Live session, and Tip card links; points to `/pay/{handle}`
+- **`layout.tsx`** — footer now includes Privacy and Terms links (after Staking)
 
 ---
 

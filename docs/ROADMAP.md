@@ -56,10 +56,11 @@ This roadmap reflects the current implementation plan. It is a working document 
 - [ ] "My Agents" management UI (`/agents` page)
 - [ ] Public agent disclosure page (`/[handle]/agents`)
 - [ ] Payment intent API (`POST /api/payments`, `GET /api/payments/[id]`)
-- [ ] Payment request page (`/pay/[handle]`)
+- [x] **Payment request page (`/pay/[handle]`)** — BIP21 QR, preset + custom amount picker, Open in wallet, copy URI; non-custodial (0.4.1)
 - [ ] User guide page (`/guide`)
-- [ ] Privacy policy page (`/privacy`)
-- [ ] Terms of use page (`/terms`)
+- [x] **Privacy policy page (`/privacy`)** — 10 sections, store-submission ready (0.4.1)
+- [x] **Terms of use page (`/terms`)** — 10 sections, store-submission ready (0.4.1)
+- [x] **Register page social accounts** — 13-platform selector, self-reported social links at registration time, API route accepts `socialLinks[]` (0.4.1)
 - [ ] Proper README (replace create-next-app stub)
 - [ ] `ARCHITECTURE.md`, `SECURITY.md`, `CONTRIBUTING.md` at repo root
 
@@ -249,4 +250,5 @@ Ordered by dependency. Do not skip steps.
 | v0.1 | 2026-05-25 | Initial scaffold — handle registration, public tip pages |
 | v0.2 | 2026-05-25 | Social proofs, wallet verification challenge, edit/live pages |
 | v0.3 | 2026-05-25 | Platform expansion, Love Button v2.4, platforms page, search API |
-| v0.4 | In progress | Foundation refactor — types, DataStore, wallets, agents, payment intents |
+| v0.4.0 | 2026-05-25 | Foundation refactor — types, DataStore, wallets, agents, payment intents; platforms.ts; /platforms page; /api/search |
+| v0.4.1 | 2026-05-25 | /privacy + /terms pages; /pay/[handle] BIP21 payment page; register social accounts (13 platforms); API socialLinks[] |
