@@ -8,10 +8,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- Handle search / public directory page
-- Platform API verification for social proofs (v0.2 — check bio/posts for challenge code via platform APIs)
-- ReddRail state channel sessions (v0.3 — real Gajumaru Associate Chain integration; expected Q3/Q4 2026)
+- Platform API verification for social proofs (v0.3 — check bio/posts for challenge code via platform APIs)
+- ReddRail state channel sessions (real Gajumaru Associate Chain integration; expected Q3/Q4 2026)
 - AI-agent payment policies (v0.4)
+- PWA icons (`/icon-192.png`, `/icon-512.png`) — placeholder manifest already in place
+
+---
+
+## [0.3.0] — 2026-05-25
+
+### Added
+- **`GET /api/explore`** — returns all public identities sorted newest-first; strips `editToken` via `publicIdentity()`; used by the `/explore` creator directory
+- **`/explore` creator directory** — `'use client'` grid page with live search (handle / display name / bio), platform filter drop-down, and A→Z sort; card hover animations; CTA linking to `/register`
+- **`RecentTips` component** — fetches `Blockbook v2 /api/v2/address/{addr}?details=txs&pageSize=5`; renders last 5 incoming tips with amounts, relative timestamps, confirmations badge, and Blockbook explorer links; auto-refreshes every 60 s; wired into tip page below address section
+- **`/bridge` ReddBridge page** — full placeholder page for the RDD ↔ Gajumaru wRDD reserve bridge; faux exchange UI (behind overlay explaining Q3/Q4 2026 ETA); how-it-works 4-step flow; feature callouts (100% reserve-backed, ReddRail integration, permissionless exit); stats grid; notify-me CTA
+- **`MarketTicker` component** — fetches CoinGecko `simple/price` for `reddcoin`; shows USD price, 24 h change with trend icon (TrendingUp/Down/Minus), market cap, 24 h volume; compact mode (pill) and full mode; refreshes every 5 min; added to homepage above stats row
+- **`/card/[handle]` shareable tip card** — full-screen print/screenshot-optimised branded card; large QR code on white background, handle, name, bio, social proofs, truncated address with type badge; print CSS hides nav; Share + Copy address action buttons; linked from tip page footer
+- **`/staking` PoSV staking calculator** — interactive `StakingCalculator` client component; balance input with 1K/10K/100K/1M presets; APR range slider (1–20%); coin age slider with 7-day minimum / 60-day max-weight model; simple vs monthly-compounding toggle; daily/weekly/monthly/annual reward grid; balance-after-1-year summary; PoSV explainer cards; v0.4 AI-agent teaser; full FAQ
+- **PWA manifest** — `public/manifest.webmanifest` with `theme_color: #E30613`, shortcuts to Register/Explore/Bridge; wired into `layout.tsx` via `metadata.manifest` + `metadata.themeColor`
+- **NavBar** — added Explore, Bridge, and Staking links; version badge bumped to v0.3 beta
+
+### Changed
+- `[handle]/page.tsx` — imports `RecentTips`; adds recent tips section below address; adds `🃏 Tip card` link in card footer pointing to `/card/{handle}`
+- `page.tsx` (homepage) — imports `MarketTicker`; renders ticker above stats row; version badge bumped to v0.3
+- `layout.tsx` — footer version bumped to v0.3 beta; added bridge and staking footer links
 
 ---
 

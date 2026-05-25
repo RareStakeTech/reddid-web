@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     description: 'Social identity and tipping for ReddCoin (RDD · Ɍ)',
     siteName: 'ReddID Next',
   },
+  manifest: '/manifest.webmanifest',
+  themeColor: '#E30613',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -38,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             fontFamily: "'Rubik', sans-serif",
           }}
         >
-          <span>ReddID Next v0.1 beta · </span>
+          <span>ReddID Next v0.3 beta · </span>
           <a
             href="https://www.reddcoin.com"
             target="_blank"
@@ -54,6 +56,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span> · </span>
           <a href="/reserve" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
             Reserve Model
+          </a>
+          <span> · </span>
+          <a href="/bridge" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
+            ReddBridge
+          </a>
+          <span> · </span>
+          <a href="/staking" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
+            PoSV Staking
           </a>
         </footer>
       </body>

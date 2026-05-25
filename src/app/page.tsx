@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { AtSign, Zap, Link2, Bot, Scale } from 'lucide-react';
 import { countIdentities } from '@/lib/db';
 import CountUp from '@/components/CountUp';
+import MarketTicker from '@/components/MarketTicker';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,7 +77,7 @@ export default async function HomePage() {
               textTransform: 'uppercase',
             }}
           >
-            v0.1 Public Beta · Native Ɍ RDD only
+            v0.3 Public Beta · Native Ɍ RDD only
           </span>
         </div>
         <h1
@@ -147,10 +148,15 @@ export default async function HomePage() {
         </div>
       </div>
 
+      {/* Market ticker */}
+      <div style={{ marginBottom: 24 }}>
+        <MarketTicker />
+      </div>
+
       {/* Stats */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 64, flexWrap: 'wrap' }}>
         <StatCard value={identityCount} animateTarget={identityCount} label="Registered @handles" />
-        <StatCard value="v0.1" label="Current version" />
+        <StatCard value="v0.3" label="Current version" />
         <StatCard value="Ɍ Native RDD" label="Root asset" />
         <StatCard value="Open" label="Registration" />
       </div>

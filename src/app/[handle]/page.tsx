@@ -9,6 +9,7 @@ import QRCodeDisplay from '@/components/QRCodeDisplay';
 import ShareButton from '@/components/ShareButton';
 import LiveBalance from '@/components/LiveBalance';
 import EditLink from '@/components/EditLink';
+import RecentTips from '@/components/RecentTips';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `Tip ${name} with Ɍ RDD`,
       description: identity.bio ?? `Send Ɍ ReddCoin to ${name}.`,
+      images: [{ url: `/api/og/${identity.handle}`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `Tip ${name} with Ɍ RDD`,
+      description: identity.bio ?? `Send Ɍ ReddCoin to ${name}.`,
+      images: [`/api/og/${identity.handle}`],
     },
   };
 }
@@ -282,6 +290,11 @@ export default async function TipPage({ params, searchParams }: Props) {
           </p>
         </div>
 
+        {/* Recent on-chain tips */}
+        <div style={{ padding: '18px 32px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <RecentTips rddAddress={identity.rddAddress} />
+        </div>
+
         {/* Quick tip amounts */}
         <div style={{ padding: '18px 32px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -372,6 +385,12 @@ export default async function TipPage({ params, searchParams }: Props) {
               style={{ fontSize: '0.75rem', color: 'var(--redd-red)', textDecoration: 'none', fontFamily: "'Rubik', sans-serif", fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
             >
               ▶ Live session
+            </Link>
+            <Link
+              href={`/card/${identity.handle}`}
+              style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'none', fontFamily: "'Rubik', sans-serif", fontWeight: 600 }}
+            >
+              🃏 Tip card
             </Link>
             <EditLink handle={identity.handle} />
             <Link

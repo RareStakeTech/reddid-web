@@ -36,7 +36,7 @@ function randomDelay(): number {
  */
 export async function GET(
   request: NextRequest,
-  ctx: RouteContext<'/api/live/[handle]/events'>
+  ctx: { params: Promise<{ handle: string }> }
 ) {
   const { handle } = await ctx.params;
   const clean = sanitizeHandle(handle);

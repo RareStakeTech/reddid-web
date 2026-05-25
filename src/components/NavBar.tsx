@@ -3,11 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X } from 'lucide-react';
+import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X, ArrowLeftRight, Users, Zap } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/',         label: 'Home',     Icon: Home },
   { href: '/register', label: 'Register', Icon: PenLine },
+  { href: '/explore',  label: 'Explore',  Icon: Users },
+  { href: '/bridge',   label: 'Bridge',   Icon: ArrowLeftRight },
+  { href: '/staking',  label: 'Staking',  Icon: Zap },
   { href: '/roadmap',  label: 'Roadmap',  Icon: Map },
   { href: '/reserve',  label: 'Reserve',  Icon: BarChart2 },
   { href: '/docs',     label: 'Docs',     Icon: BookOpen },
@@ -70,7 +73,7 @@ export default function NavBar() {
               letterSpacing: '0.05em',
             }}
           >
-            v0.1 beta
+            v0.3 beta
           </span>
         </Link>
 

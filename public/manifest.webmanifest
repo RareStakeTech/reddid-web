@@ -1,0 +1,45 @@
+{
+  "name": "ReddID Next",
+  "short_name": "ReddID",
+  "description": "Register your @handle and receive Ɍ ReddCoin tips from your community.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#E30613",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Register @handle",
+      "short_name": "Register",
+      "url": "/register",
+      "description": "Claim your ReddID @handle"
+    },
+    {
+      "name": "Explore creators",
+      "short_name": "Explore",
+      "url": "/explore",
+      "description": "Find creators to tip with Ɍ RDD"
+    },
+    {
+      "name": "ReddBridge",
+      "short_name": "Bridge",
+      "url": "/bridge",
+      "description": "RDD ↔ Gajumaru wRDD bridge"
+    }
+  ],
+  "categories": ["finance", "social", "utilities"],
+  "lang": "en"
+}
