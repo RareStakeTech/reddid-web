@@ -20,6 +20,8 @@ import type { ActionEnvelopeProvider } from '@/lib/providers/action-envelope-pro
 import type { PresentationProvider } from '@/lib/providers/presentation-provider';
 import type { SignatureVerifier } from '@/lib/providers/signature-verifier';
 import type { InstructionSigner } from '@/lib/providers/instruction-signer';
+import type { PaymentRailAdapter } from '@/lib/providers/payment-rail';
+import type { PaymentIntentProvider } from '@/lib/providers/payment-intent-provider';
 
 import { MockPolicyEngine } from '@/lib/providers/mock/mock-policy-engine';
 import { MockRevocationRegistry } from '@/lib/providers/mock/mock-revocation-registry';
@@ -29,6 +31,8 @@ import { MockActionEnvelopeProvider } from '@/lib/providers/mock/mock-action-env
 import { MockPresentationProvider } from '@/lib/providers/mock/mock-presentation-provider';
 import { MockSignatureVerifier } from '@/lib/providers/mock/mock-signature-verifier';
 import { MockInstructionSigner } from '@/lib/providers/mock/mock-instruction-signer';
+import { MockPaymentRailAdapter } from '@/lib/providers/mock/mock-payment-rail';
+import { MockPaymentIntentProvider } from '@/lib/providers/mock/mock-payment-intent-provider';
 
 export interface Providers {
   policyEngine: PolicyEngine;
@@ -39,6 +43,10 @@ export interface Providers {
   presentationProvider: PresentationProvider;
   signatureVerifier: SignatureVerifier;
   instructionSigner: InstructionSigner;
+  /** Rail adapter for the primary native-rdd payment rail (mock in MVP). */
+  paymentRail: PaymentRailAdapter;
+  /** Creates and manages PaymentIntent lifecycle (mock in-memory store in MVP). */
+  paymentIntentProvider: PaymentIntentProvider;
 }
 
 let _providers: Providers | null = null;
@@ -61,6 +69,8 @@ export function getProviders(): Providers {
     presentationProvider: new MockPresentationProvider(),
     signatureVerifier: new MockSignatureVerifier(),
     instructionSigner: new MockInstructionSigner(),
+    paymentRail: new MockPaymentRailAdapter(),
+    paymentIntentProvider: new MockPaymentIntentProvider(),
   };
   return _providers;
 }
