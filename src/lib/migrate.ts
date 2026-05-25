@@ -9,10 +9,10 @@
  *   - Old fields are retained until all reads have migrated (soft deprecation).
  *
  * Version history:
- *   v1 (no schemaVersion field): original prototype — single rddAddress string
- *   v2 (schemaVersion: 2): wallets[], agents[], identityType, revocation fields
- *     → migration: convert rddAddress → wallets[0], add default fields
- *     → NOT YET APPLIED — added in Commit 4
+ *   v0 (no schemaVersion field): original prototype — single rddAddress string
+ *   v1 (schemaVersion: 1): tagged — same shape as v0, just stamped
+ *   v2 (schemaVersion: 2): wallets[], agents[], identityType, avatar,
+ *     editTokenCreatedAt, revocation fields, parentHandle
  *
  * To add a new migration:
  *   1. Increment CURRENT_SCHEMA_VERSION
@@ -27,41 +27,82 @@ import type { Identity, DbSchema } from './types';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 // ── Migration functions ──────────────────────────────────────────────────────
 // Each function takes a record at version N and returns it at version N+1.
 // The function MUST set schemaVersion on the returned record.
 
 /**
- * v1 → v1 (normalise): tag all legacy records without schemaVersion.
- * This is a no-op transformation — it just stamps the version number
- * so future migrations can reliably detect where each record sits.
+ * v0 → v1: tag all legacy records without schemaVersion.
+ * No-op transformation — just stamps the version number so v1→v2 can run.
  */
-function migrateUnversionedToV1(identity: Identity): Identity {
+function migrateV0ToV1(identity: Identity): Identity {
+  return { ...identity, schemaVersion: 1 };
+}
+
+/**
+ * v1 → v2: expand Identity to full v2 model.
+ *
+ * - Adds wallets[] from rddAddress (retains rddAddress for compat)
+ * - Adds identityType: 'human'
+ * - Adds avatar, publicSigningKey, editTokenCreatedAt
+ * - Adds agents[], parentHandle, revocationKey, revokedAt, revokedReason
+ */
+function migrateV1ToV2(identity: Identity): Identity {
+  const now = identity.updatedAt ?? identity.createdAt ?? new Date().toISOString();
+
+  // Build wallets[] from rddAddress only if wallets not already present
+  const wallets =
+    identity.wallets && identity.wallets.length > 0
+      ? identity.wallets
+      : identity.rddAddress
+      ? [
+          {
+            id: `mig-${Date.now().toString(36)}`,
+            chain: 'rdd' as const,
+            address: identity.rddAddress,
+            label: null,
+            purpose: 'receive' as const,
+            visibility: 'public' as const,
+            proofType: 'self-reported' as const,
+            proofSignature: null,
+            proofNonce: null,
+            verified: false,
+            primary: true,
+            addedAt: identity.createdAt ?? now,
+            revokedAt: null,
+          },
+        ]
+      : [];
+
   return {
     ...identity,
-    schemaVersion: 1,
+    identityType: identity.identityType ?? 'human',
+    wallets,
+    avatar: identity.avatar ?? null,
+    publicSigningKey: identity.publicSigningKey ?? null,
+    parentHandle: identity.parentHandle ?? null,
+    agents: identity.agents ?? [],
+    revocationKey: identity.revocationKey ?? null,
+    revokedAt: identity.revokedAt ?? null,
+    revokedReason: identity.revokedReason ?? null,
+    editTokenCreatedAt: identity.editTokenCreatedAt ?? identity.createdAt,
+    schemaVersion: 2,
   };
 }
 
 // ── Migration registry ───────────────────────────────────────────────────────
 // Each entry: { fromVersion, toVersion, migrate }
-// Migrations are applied in order; each expects records at `fromVersion`.
+// Applied in order; each step expects records already at `fromVersion`.
 
 const MIGRATIONS: Array<{
   fromVersion: number;
   toVersion: number;
   migrate: (identity: Identity) => Identity;
 }> = [
-  // Normalise legacy records that have no schemaVersion field
-  {
-    fromVersion: 0,      // 0 = "no version tag" sentinel
-    toVersion: 1,
-    migrate: migrateUnversionedToV1,
-  },
-  // Commit 4 will add:
-  // { fromVersion: 1, toVersion: 2, migrate: migrateV1ToV2 }
+  { fromVersion: 0, toVersion: 1, migrate: migrateV0ToV1 },
+  { fromVersion: 1, toVersion: 2, migrate: migrateV1ToV2 },
 ];
 
 // ── Runner ───────────────────────────────────────────────────────────────────

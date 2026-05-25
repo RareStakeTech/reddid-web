@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ExternalLink, Wallet, Zap, CheckCircle2 } from 'lucide-react';
 import { getIdentityByHandle } from '@/lib/db';
 import { getAddressType, buildBip21Uri } from '@/lib/validation';
+import { primaryRddAddress } from '@/lib/types';
 import CopyButton from '@/components/CopyButton';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import ShareButton from '@/components/ShareButton';
@@ -131,8 +132,10 @@ export default async function TipPage({ params, searchParams }: Props) {
     year: 'numeric', month: 'long',
   });
   const pageUrl = `https://redd.love/@${identity.handle}`;
+  // Derived from wallets[] (v2) or rddAddress fallback (v1 migration)
+  const addr = primaryRddAddress(identity) ?? '';
   // BIP21 URI for QR — wallets that support reddcoin: will auto-fill the address
-  const bip21Uri = buildBip21Uri(identity.rddAddress);
+  const bip21Uri = buildBip21Uri(addr);
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 20px' }}>
@@ -269,7 +272,7 @@ export default async function TipPage({ params, searchParams }: Props) {
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
               Ɍ RDD Address
             </span>
-            <AddressTypeBadge address={identity.rddAddress} />
+            <AddressTypeBadge address={addr} />
           </div>
           <div
             style={{
@@ -294,11 +297,11 @@ export default async function TipPage({ params, searchParams }: Props) {
                 fontSize: '0.82rem',
               }}
             >
-              {identity.rddAddress}
+              {addr}
             </code>
-            <CopyButton text={identity.rddAddress} label="Address" />
+            <CopyButton text={addr} label="Address" />
           </div>
-          <LiveBalance address={identity.rddAddress} />
+          <LiveBalance address={addr} />
           <p style={{ marginTop: 7, fontSize: '0.71rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>
             Open your ReddCoin wallet and send any amount of Ɍ RDD to this address.
             No account needed — standard network fee only.
@@ -307,7 +310,7 @@ export default async function TipPage({ params, searchParams }: Props) {
 
         {/* Recent on-chain tips */}
         <div style={{ padding: '18px 32px', borderBottom: '1px solid var(--border-subtle)' }}>
-          <RecentTips rddAddress={identity.rddAddress} />
+          <RecentTips rddAddress={addr} />
         </div>
 
         {/* Quick tip amounts */}
@@ -322,7 +325,7 @@ export default async function TipPage({ params, searchParams }: Props) {
             {TIP_AMOUNTS.map(amount => (
               <CopyButton
                 key={amount}
-                text={buildBip21Uri(identity.rddAddress, amount, displayName)}
+                text={buildBip21Uri(addr, amount, displayName)}
                 label={`Ɍ${amount.toLocaleString()}`}
               />
             ))}

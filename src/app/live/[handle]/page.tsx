@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getIdentityByHandle } from '@/lib/db';
+import { primaryRddAddress } from '@/lib/types';
 import LiveSession from '@/components/LiveSession';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,7 @@ export default async function LivePage({ params }: Props) {
   if (!identity) notFound();
 
   const displayName = identity.displayName ?? `@${identity.handle}`;
+  const addr = primaryRddAddress(identity) ?? '';
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '36px 20px' }}>
@@ -78,7 +80,7 @@ export default async function LivePage({ params }: Props) {
       </div>
 
       {/* Live session component */}
-      <LiveSession handle={identity.handle} rddAddress={identity.rddAddress} />
+      <LiveSession handle={identity.handle} rddAddress={addr} />
 
       {/* Architecture section */}
       <div style={{ marginTop: 40, borderTop: '1px solid var(--border)', paddingTop: 32 }}>

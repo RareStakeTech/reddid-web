@@ -97,19 +97,48 @@ export class JsonFileDataStore implements DataStore {
     if (existing) throw new Error(`Handle @${input.handle} is already taken.`);
 
     const now = new Date().toISOString();
+    const address = input.rddAddress.trim();
     const identity: Identity = {
       id: this.generateId(),
       handle: input.handle.toLowerCase(),
+      identityType: input.identityType ?? 'human',
       displayName: input.displayName?.trim() || null,
-      rddAddress: input.rddAddress.trim(),
+      // v1 compat field — kept so existing reads that use rddAddress still work
+      rddAddress: address,
+      // v2 canonical wallet list
+      wallets: [
+        {
+          id: this.generateId(),
+          chain: 'rdd',
+          address,
+          label: null,
+          purpose: 'receive',
+          visibility: 'public',
+          proofType: 'self-reported',
+          proofSignature: null,
+          proofNonce: null,
+          verified: false,
+          primary: true,
+          addedAt: now,
+          revokedAt: null,
+        },
+      ],
       bio: input.bio?.trim().slice(0, 160) || null,
+      avatar: null,
+      publicSigningKey: null,
       website: input.website?.trim() || null,
       socialProofs: [],
+      parentHandle: null,
+      agents: [],
+      revocationKey: null,
+      revokedAt: null,
+      revokedReason: null,
       editToken: this.generateToken(8), // 16-char hex
+      editTokenCreatedAt: now,
       verificationChallenges: {},
       createdAt: now,
       updatedAt: now,
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
     db.identities.push(identity);
     this.writeDb(db);
@@ -135,6 +164,10 @@ export class JsonFileDataStore implements DataStore {
       db.identities[idx].bio = updates.bio.trim().slice(0, 160) || null;
     if (updates.website !== undefined)
       db.identities[idx].website = updates.website.trim() || null;
+    if (updates.identityType !== undefined)
+      db.identities[idx].identityType = updates.identityType;
+    if (updates.avatar !== undefined)
+      db.identities[idx].avatar = updates.avatar.trim() || null;
 
     db.identities[idx].updatedAt = new Date().toISOString();
     this.writeDb(db);

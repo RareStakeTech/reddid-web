@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 import { getIdentityByHandle, publicIdentity } from '@/lib/db';
 import { sanitizeHandle, getAddressType } from '@/lib/validation';
+import { primaryRddAddress } from '@/lib/types';
 
 // Note: ImageResponse works on Node.js runtime too — edge runtime can't use fs/path from db.ts
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,8 @@ export async function GET(
   const identity = raw ? publicIdentity(raw) : null;
 
   const displayName = identity?.displayName ?? (identity ? `@${identity.handle}` : '@unknown');
-  const addrType    = identity ? getAddressType(identity.rddAddress) : null;
+  const addr        = identity ? (primaryRddAddress(identity) ?? '') : '';
+  const addrType    = addr ? getAddressType(addr) : null;
   const addrBadge   = addrType === 'segwit' ? 'SegWit' : addrType === 'legacy' ? 'Legacy' : null;
   const addrColor   = addrType === 'segwit' ? '#a78bfa' : '#60a5fa';
 
@@ -86,7 +88,7 @@ export async function GET(
             )}
 
             {/* Address row */}
-            {identity?.rddAddress && (
+            {addr && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                 <div style={{
                   background: '#111',
@@ -104,7 +106,7 @@ export async function GET(
                     color: '#d4d4d4',
                     display: 'flex',
                   }}>
-                    {identity.rddAddress.slice(0, 12)}…{identity.rddAddress.slice(-8)}
+                    {addr.slice(0, 12)}…{addr.slice(-8)}
                   </span>
                   {addrBadge && (
                     <span style={{

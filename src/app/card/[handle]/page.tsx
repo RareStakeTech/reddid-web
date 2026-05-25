@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getIdentityByHandle } from '@/lib/db';
 import { buildBip21Uri, getAddressType } from '@/lib/validation';
+import { primaryRddAddress } from '@/lib/types';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import ShareButton from '@/components/ShareButton';
 import CopyButton from '@/components/CopyButton';
@@ -31,8 +32,9 @@ export default async function CardPage({ params }: Props) {
   if (!identity) notFound();
 
   const displayName = identity.displayName ?? `@${identity.handle}`;
-  const bip21 = buildBip21Uri(identity.rddAddress);
-  const addrType = getAddressType(identity.rddAddress);
+  const addr = primaryRddAddress(identity) ?? '';
+  const bip21 = buildBip21Uri(addr);
+  const addrType = getAddressType(addr);
   const typeBadge = addrType === 'segwit' ? 'SegWit' : addrType === 'legacy' ? 'Legacy' : null;
   const typeBadgeColor = addrType === 'segwit' ? '#a78bfa' : '#60a5fa';
   const pageUrl = `https://redd.love/@${identity.handle}`;
@@ -111,7 +113,7 @@ export default async function CardPage({ params }: Props) {
                   marginBottom: 8,
                 }}>
                   <code style={{ fontSize: '0.68rem', color: '#d4d4d4', wordBreak: 'break-all', lineHeight: 1.6 }}>
-                    {identity.rddAddress}
+                    {addr}
                   </code>
                 </div>
                 {typeBadge && (
@@ -163,7 +165,7 @@ export default async function CardPage({ params }: Props) {
             🖨 Print / Save PDF
           </button>
           <ShareButton url={pageUrl} title={`Tip @${identity.handle} with Ɍ RDD`} />
-          <CopyButton text={identity.rddAddress} label="Copy address" />
+          <CopyButton text={addr} label="Copy address" />
         </div>
 
         <div className="no-print" style={{ marginTop: 20, fontSize: '0.78rem', color: 'var(--text-dim)', textAlign: 'center' }}>
