@@ -1,8 +1,25 @@
 import { NextRequest } from 'next/server';
 import { createIdentity, getIdentityByHandle, publicIdentity } from '@/lib/db';
 import { isValidHandle, isValidRddAddress, isValidUrl, sanitizeHandle } from '@/lib/validation';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 3 registrations per IP per hour (in-memory; swap for Redis in prod)
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+  const rl = checkRateLimit(ip, 'register', RATE_LIMITS.register);
+  if (!rl.ok) {
+    return Response.json(
+      { error: 'Too many registrations from this IP. Try again later.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          'X-RateLimit-Remaining': '0',
+        },
+      },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();

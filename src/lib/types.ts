@@ -487,6 +487,26 @@ export interface RevocationEvent {
   visibility: 'public' | 'private';
 }
 
+// ── Abuse report ──────────────────────────────────────────────────────────────
+
+export type AbuseReportCategory =
+  | 'impersonation'      // claiming to be someone they are not
+  | 'spam'               // unsolicited bulk messages or tip spam
+  | 'scam'               // fraudulent payment requests or phishing
+  | 'harassment'         // targeted abuse or threats
+  | 'misinformation'     // materially false claims likely to cause harm
+  | 'other';
+
+export interface AbuseReport {
+  id: string;
+  reportedHandle: string;
+  reporterIp: string | null;   // hashed IP — never stored raw
+  category: AbuseReportCategory;
+  description: string;         // max 500 chars
+  evidenceUrl: string | null;
+  createdAt: string;
+}
+
 // ── Internal DB schema ────────────────────────────────────────────────────────
 
 export interface DbSchema {
