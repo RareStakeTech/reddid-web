@@ -4,7 +4,7 @@ import { sanitizeHandle, isValidHandle, isValidUrl } from '@/lib/validation';
 
 export async function GET(
   _req: NextRequest,
-  ctx: RouteContext<'/api/identities/[handle]'>
+  ctx: { params: Promise<{ handle: string }> }
 ) {
   const { handle } = await ctx.params;
   const clean = sanitizeHandle(handle);
@@ -20,7 +20,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  ctx: RouteContext<'/api/identities/[handle]'>
+  ctx: { params: Promise<{ handle: string }> }
 ) {
   const { handle } = await ctx.params;
   const clean = sanitizeHandle(handle);
