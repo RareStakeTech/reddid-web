@@ -2,11 +2,17 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, AlertCircle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { sanitizeHandle, isValidHandle } from '@/lib/validation';
+import { LIVE_PLATFORMS } from '@/lib/platforms';
 
 type Field = 'handle' | 'rddAddress' | 'displayName' | 'bio' | 'website';
 type AvailabilityState = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
+interface SocialLink {
+  platform: string;
+  username: string;
+}
 
 interface FormState {
   handle: string;
@@ -64,11 +70,190 @@ function AvailabilityIndicator({ state, handle }: { state: AvailabilityState; ha
   );
 }
 
+// ── Social accounts section ────────────────────────────────────────────────────
+
+function SocialLinksSection({
+  links,
+  onChange,
+}: {
+  links: SocialLink[];
+  onChange: (links: SocialLink[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  function addRow() {
+    if (links.length >= 10) return;
+    onChange([...links, { platform: LIVE_PLATFORMS[0].id, username: '' }]);
+    setOpen(true);
+  }
+
+  function removeRow(i: number) {
+    onChange(links.filter((_, idx) => idx !== i));
+  }
+
+  function updateRow(i: number, field: 'platform' | 'username', value: string) {
+    const next = links.map((l, idx) => idx === i ? { ...l, [field]: value } : l);
+    onChange(next);
+  }
+
+  const hasLinks = links.length > 0;
+
+  return (
+    <div>
+      {/* Collapsible header */}
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); if (!hasLinks && !open) addRow(); }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          color: 'var(--text-primary)',
+          fontFamily: "'Rubik', sans-serif",
+          fontWeight: 600,
+          fontSize: '0.85rem',
+        }}
+      >
+        <span>
+          Social Accounts
+          <span style={{ color: 'var(--text-dim)', fontWeight: 400, fontSize: '0.78rem', marginLeft: 8 }}>
+            optional · {links.length > 0 ? `${links.length} added` : 'link X, YouTube, GitHub…'}
+          </span>
+        </span>
+        {open ? <ChevronUp size={16} style={{ color: 'var(--text-dim)' }} /> : <ChevronDown size={16} style={{ color: 'var(--text-dim)' }} />}
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 14 }}>
+          {links.length === 0 && (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: 12 }}>
+              Linking a social account lets visitors verify it&apos;s really you. You can add proof later via the verify flow.
+            </p>
+          )}
+
+          {/* Rows */}
+          {links.map((link, i) => {
+            const def = LIVE_PLATFORMS.find(p => p.id === link.platform);
+            return (
+              <div
+                key={i}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '160px 1fr 36px',
+                  gap: 8,
+                  marginBottom: 10,
+                  alignItems: 'center',
+                }}
+              >
+                {/* Platform selector */}
+                <select
+                  value={link.platform}
+                  onChange={e => updateRow(i, 'platform', e.target.value)}
+                  style={{
+                    ...INPUT_STYLE,
+                    padding: '9px 10px',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 10px center',
+                    paddingRight: 28,
+                  }}
+                >
+                  {LIVE_PLATFORMS.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.icon} {p.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Username input */}
+                <input
+                  type="text"
+                  value={link.username}
+                  onChange={e => updateRow(i, 'username', e.target.value)}
+                  placeholder={def?.placeholder ?? 'username'}
+                  maxLength={100}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  style={INPUT_STYLE}
+                />
+
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={() => removeRow(i)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'none',
+                    border: '1px solid var(--border)',
+                    borderRadius: 7,
+                    color: 'var(--text-dim)',
+                    cursor: 'pointer',
+                    width: 36,
+                    height: 38,
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                  title="Remove"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Add row button */}
+          {links.length < 10 && (
+            <button
+              type="button"
+              onClick={addRow}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'none',
+                border: '1px dashed var(--border)',
+                borderRadius: 7,
+                color: 'var(--text-dim)',
+                cursor: 'pointer',
+                padding: '8px 14px',
+                fontSize: '0.8rem',
+                fontFamily: "'Rubik', sans-serif",
+                marginTop: 4,
+              }}
+            >
+              <Plus size={13} />
+              Add platform
+            </button>
+          )}
+
+          <p style={{ fontSize: '0.73rem', color: 'var(--text-dim)', marginTop: 10, lineHeight: 1.5 }}>
+            Social links are self-reported at registration. Complete the <strong style={{ color: 'var(--text-muted)' }}>challenge-post flow</strong> after
+            registration to record a proof URL.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>({
     handle: '', rddAddress: '', displayName: '', bio: '', website: '',
   });
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<AvailabilityState>('idle');
@@ -120,6 +305,9 @@ export default function RegisterPage() {
     setError(null);
     setSubmitting(true);
 
+    // Filter out blank social rows before submitting
+    const cleanedSocials = socialLinks.filter(l => l.username.trim().length > 0);
+
     try {
       const res = await fetch('/api/identities', {
         method: 'POST',
@@ -130,6 +318,7 @@ export default function RegisterPage() {
           displayName: form.displayName.trim(),
           bio:         form.bio.trim(),
           website:     form.website.trim(),
+          socialLinks: cleanedSocials,
         }),
       });
 
@@ -303,6 +492,13 @@ export default function RegisterPage() {
             />
             <Hint text="Optional · your site, blog, or social profile" />
           </div>
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+
+          {/* Social accounts */}
+          <SocialLinksSection links={socialLinks} onChange={setSocialLinks} />
+
         </div>
 
         {/* Error */}
@@ -355,8 +551,11 @@ export default function RegisterPage() {
         </button>
 
         <p style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.72rem', marginTop: 14, lineHeight: 1.6 }}>
-          v0.1 beta · Handle registration is permanent in this version.
-          Cryptographic address verification (wallet signature) ships in v0.2.
+          By registering you agree to our{' '}
+          <a href="/terms" style={{ color: 'var(--text-dim)', textDecoration: 'underline' }}>Terms of Use</a>
+          {' '}and{' '}
+          <a href="/privacy" style={{ color: 'var(--text-dim)', textDecoration: 'underline' }}>Privacy Policy</a>.
+          {' '}v0.1 beta · Cryptographic address verification ships in v0.2.
         </p>
       </form>
     </div>

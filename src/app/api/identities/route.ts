@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { createIdentity, getIdentityByHandle, publicIdentity } from '@/lib/db';
+import { createIdentity, getIdentityByHandle, addSocialProof, publicIdentity } from '@/lib/db';
 import { isValidHandle, isValidRddAddress, isValidUrl, sanitizeHandle } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { ALL_PLATFORM_IDS } from '@/lib/platforms';
 
 export async function POST(request: NextRequest) {
   // Rate limit: max 3 registrations per IP per hour (in-memory; swap for Redis in prod)
@@ -32,6 +33,20 @@ export async function POST(request: NextRequest) {
   const displayName = String(body.displayName ?? '').trim().slice(0, 60);
   const bio         = String(body.bio ?? '').trim().slice(0, 160);
   const website     = String(body.website ?? '').trim().slice(0, 200);
+
+  // Optional social links — array of { platform, username } submitted at registration
+  const rawSocialLinks = Array.isArray(body.socialLinks) ? body.socialLinks : [];
+  const socialLinks = rawSocialLinks
+    .filter((l): l is { platform: string; username: string } =>
+      l !== null &&
+      typeof l === 'object' &&
+      typeof l.platform === 'string' &&
+      typeof l.username === 'string' &&
+      ALL_PLATFORM_IDS.includes(l.platform) &&
+      l.username.trim().length > 0
+    )
+    .slice(0, 10) // max 10 social links at registration
+    .map(l => ({ platform: l.platform, username: l.username.trim().slice(0, 100) }));
 
   // Validate handle
   const handleClean = sanitizeHandle(rawHandle);
@@ -64,13 +79,30 @@ export async function POST(request: NextRequest) {
 
   // Create
   try {
-    const identity = createIdentity({
+    let identity = createIdentity({
       handle: handleClean,
       displayName: displayName || undefined,
       rddAddress,
       bio: bio || undefined,
       website: website || undefined,
     });
+
+    // Attach any social links provided at registration (self-reported, no verification required)
+    for (const link of socialLinks) {
+      try {
+        identity = addSocialProof(handleClean, {
+          platform: link.platform,
+          username: link.username,
+          proofMethod: 'self-reported',
+          proofUrl: null,
+          verificationStatus: 'pending',
+          visibility: 'public',
+        });
+      } catch {
+        // Non-fatal — continue if one social link fails
+      }
+    }
+
     // Return editToken once — client must save it; it won't appear in GET responses
     return Response.json({
       success: true,

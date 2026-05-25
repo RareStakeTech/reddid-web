@@ -407,6 +407,12 @@ export default async function TipPage({ params, searchParams }: Props) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <ShareButton url={pageUrl} title={`Tip @${identity.handle} with Ɍ RDD`} />
             <Link
+              href={`/pay/${identity.handle}`}
+              style={{ fontSize: '0.75rem', color: 'var(--redd-red-light)', textDecoration: 'none', fontFamily: "'Rubik', sans-serif", fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              Ɍ Pay
+            </Link>
+            <Link
               href={`/live/${identity.handle}`}
               style={{ fontSize: '0.75rem', color: 'var(--redd-red)', textDecoration: 'none', fontFamily: "'Rubik', sans-serif", fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
             >

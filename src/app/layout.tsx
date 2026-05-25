@@ -69,6 +69,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <a href="/staking" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
             PoSV Staking
           </a>
+          <span> · </span>
+          <a href="/privacy" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
+            Privacy
+          </a>
+          <span> · </span>
+          <a href="/terms" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
+            Terms
+          </a>
         </footer>
       </body>
     </html>
