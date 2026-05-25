@@ -8,10 +8,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- `GET /api/identities/by-social?platform=X&username=Y` — social proof lookup endpoint (required by Love Button v2.1 content scripts for automatic creator matching without handle knowledge)
-- ReddCoin node integration for live balance on tip pages (via Blockbook v2 API at `blockbook.reddcoin.com`)
-- User authentication — session management so handle owners can update their profile
 - Handle search / public directory page
+- Platform API verification for social proofs (v0.2 — check bio/posts for challenge code via platform APIs)
+- ReddRail state channel sessions (v0.3 — real Gajumaru Associate Chain integration; expected Q3/Q4 2026)
+- AI-agent payment policies (v0.4)
+
+---
+
+## [0.2.0] — 2026-05-25
+
+### Added
+- **`GET /api/identities/by-social`** — social-proof lookup endpoint used by Love Button content scripts; finds an identity by `platform` + `username` query params; checks `socialProofs` array first, falls back to `handle === username`
+- **Live on-chain balance** — `LiveBalance` client component fetches Blockbook v2 API (`blockbook.reddcoin.com/api/v2/address/{address}`), shows balance / total received / txn count on tip pages; auto-refreshes every 60 seconds
+- **Social proof verification** — two-step wizard at `/verify`: generate 8-char hex challenge code (`POST /api/verify/challenge`), post it publicly on platform, submit proof URL (`POST /api/verify/confirm`); v0.1 is trust-based; platform API verification deferred to v0.3
+- **Profile editing** — `PUT /api/identities/[handle]` endpoint gated by `editToken`; `/edit/[handle]` client-side form with localStorage pre-fill of editToken; bio counter, website field, error feedback
+- **EditLink component** — shows "✎ Edit profile" link on tip page when `localStorage` holds the `reddid_edittoken_{handle}` key
+- **ReddRail live session** — `/live/[handle]` prototype page with SSE event stream (`/api/live/[handle]/events`), animated Ɍ counter, live tip feed, BIP21 send panel; architecture strip explains Gajumaru state channels, Associate Chains timeline, and the v0.3→v0.4 roadmap
+- **GitHub Actions CI** — `.github/workflows/ci.yml`: type-check (`tsc --noEmit`), `next build`, ESLint
+
+### Changed
+- `db.ts`: `Identity` gains `editToken` (generated at registration, 16-char hex) and `verificationChallenges` map; new functions: `getIdentityBySocial()`, `updateIdentity()`, `createVerificationChallenge()`, `confirmSocialProof()`, `publicIdentity()`
+- `POST /api/identities`: returns `editToken` field alongside the identity (one-time exposure)
+- `GET /api/identities/[handle]`: strips `editToken` and `verificationChallenges` from response via `publicIdentity()`
+- `register/page.tsx`: saves `editToken` to `localStorage` under `reddid_edittoken_{handle}` immediately after successful registration
+- `[handle]/page.tsx`: adds `LiveBalance`, `EditLink`, and "▶ Live session" link
 
 ---
 
