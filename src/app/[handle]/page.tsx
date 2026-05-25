@@ -11,6 +11,8 @@ import ShareButton from '@/components/ShareButton';
 import LiveBalance from '@/components/LiveBalance';
 import EditLink from '@/components/EditLink';
 import RecentTips from '@/components/RecentTips';
+import TrustBadge from '@/components/TrustBadge';
+import type { TrustLevel } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,11 +54,18 @@ const PLATFORM_LABELS: Record<string, string> = {
   mastodon: '🐘',
 };
 
-function PlatformBadge({ platform, username }: { platform: string; username: string }) {
+function PlatformBadge({
+  platform,
+  username,
+  trustLevel = 'self-reported',
+}: {
+  platform: string;
+  username: string;
+  trustLevel?: TrustLevel;
+}) {
   const symbol = PLATFORM_LABELS[platform] ?? '🔗';
   return (
     <span
-      title="Self-Reported — not yet auto-verified via platform API"
       style={{
         color: 'var(--text-dim)',
         fontSize: '0.75rem',
@@ -71,20 +80,7 @@ function PlatformBadge({ platform, username }: { platform: string; username: str
     >
       <span style={{ fontSize: '0.65rem' }}>{symbol}</span>
       {username}
-      <span
-        style={{
-          fontSize: '0.6rem',
-          color: 'var(--text-dim)',
-          background: 'rgba(136,136,136,0.12)',
-          border: '1px solid rgba(136,136,136,0.2)',
-          borderRadius: 3,
-          padding: '0px 4px',
-          letterSpacing: '0.04em',
-          lineHeight: 1.6,
-        }}
-      >
-        Self-Reported
-      </span>
+      <TrustBadge trustLevel={trustLevel} />
     </span>
   );
 }
@@ -248,9 +244,21 @@ export default async function TipPage({ params, searchParams }: Props) {
                       {identity.website.replace(/^https?:\/\//, '').split('/')[0]}
                     </a>
                   )}
-                  {identity.socialProofs.map(proof => (
-                    <PlatformBadge key={proof.platform} platform={proof.platform} username={proof.username} />
-                  ))}
+                  {identity.socialProofs.map(proof => {
+                    // Map verification status → trust level for display
+                    const tl: TrustLevel =
+                      proof.verificationStatus === 'verified'
+                        ? 'challenge-post-verified'
+                        : 'self-reported';
+                    return (
+                      <PlatformBadge
+                        key={proof.platform}
+                        platform={proof.platform}
+                        username={proof.username}
+                        trustLevel={tl}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
