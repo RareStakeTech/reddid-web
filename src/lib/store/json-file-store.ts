@@ -180,7 +180,7 @@ export class JsonFileDataStore implements DataStore {
     handle: string,
     platform: string,
     editToken: string,
-  ): string {
+  ): { code: string; expiresAt: string } {
     const db = this.readDb();
     const idx = db.identities.findIndex(
       i => i.handle === handle.toLowerCase(),
@@ -188,11 +188,20 @@ export class JsonFileDataStore implements DataStore {
     if (idx === -1) throw new Error('NOT_FOUND');
     if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
 
+    const now = new Date();
     const code = this.generateToken(4); // 8-char hex
-    db.identities[idx].verificationChallenges[platform.toLowerCase()] = code;
-    db.identities[idx].updatedAt = new Date().toISOString();
+    const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString(); // 8 hours
+
+    db.identities[idx].verificationChallenges[platform.toLowerCase()] = {
+      code,
+      platform: platform.toLowerCase(),
+      createdAt: now.toISOString(),
+      expiresAt,
+      attempts: 0,
+    };
+    db.identities[idx].updatedAt = now.toISOString();
     this.writeDb(db);
-    return code;
+    return { code, expiresAt };
   }
 
   confirmSocialProof(
@@ -209,19 +218,45 @@ export class JsonFileDataStore implements DataStore {
     if (idx === -1) throw new Error('NOT_FOUND');
     if (db.identities[idx].editToken !== editToken) throw new Error('UNAUTHORIZED');
 
-    // Replace existing proof for this platform, then append the new one
+    const now = new Date();
+    const platformKey = platform.toLowerCase();
+
+    // Check challenge expiry (v2 format only — string-type legacy challenges are ignored)
+    const challenge = db.identities[idx].verificationChallenges[platformKey];
+    if (challenge && typeof challenge === 'object' && challenge.expiresAt) {
+      // Increment attempt counter before checking
+      challenge.attempts += 1;
+      if (challenge.attempts > 5) {
+        throw new Error('CHALLENGE_RATE_LIMITED');
+      }
+      if (new Date(challenge.expiresAt) < now) {
+        throw new Error('CHALLENGE_EXPIRED');
+      }
+    }
+
+    // Replace existing proof for this platform, then append the updated one
     db.identities[idx].socialProofs = db.identities[idx].socialProofs.filter(
-      p => p.platform.toLowerCase() !== platform.toLowerCase(),
+      p => p.platform.toLowerCase() !== platformKey,
     );
     db.identities[idx].socialProofs.push({
-      platform: platform.toLowerCase(),
+      id: this.generateId(),
+      platform: platformKey,
       username: username.trim(),
+      proofMethod: 'challenge-post',
       proofUrl: proofUrl.trim() || null,
-      addedAt: new Date().toISOString(),
+      proofSignature: null,
+      // Trust-based in v0.3: we accept the user's claim without platform API check.
+      // v0.5: replace with 'pending' and run async platform API verification.
+      verificationStatus: 'verified',
+      verifiedAt: now.toISOString(),
+      recheckAfter: null,
+      visibility: 'public',
+      addedAt: now.toISOString(),
     });
+
     // Clear the challenge once used
-    delete db.identities[idx].verificationChallenges[platform.toLowerCase()];
-    db.identities[idx].updatedAt = new Date().toISOString();
+    delete db.identities[idx].verificationChallenges[platformKey];
+    db.identities[idx].updatedAt = now.toISOString();
     this.writeDb(db);
     return db.identities[idx];
   }

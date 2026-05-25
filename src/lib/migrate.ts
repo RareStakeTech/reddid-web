@@ -76,6 +76,11 @@ function migrateV1ToV2(identity: Identity): Identity {
         ]
       : [];
 
+  // Clear any pre-v2 string-format challenges — they used Record<string, string>
+  // which is incompatible with the VerificationChallenge object format.
+  // Challenges are ephemeral (8h TTL) so clearing them on migration is safe.
+  const verificationChallenges: Record<string, never> = {};
+
   return {
     ...identity,
     identityType: identity.identityType ?? 'human',
@@ -88,6 +93,7 @@ function migrateV1ToV2(identity: Identity): Identity {
     revokedAt: identity.revokedAt ?? null,
     revokedReason: identity.revokedReason ?? null,
     editTokenCreatedAt: identity.editTokenCreatedAt ?? identity.createdAt,
+    verificationChallenges,
     schemaVersion: 2,
   };
 }

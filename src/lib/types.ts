@@ -211,7 +211,7 @@ export interface Identity {
   // ── Authentication ──────────────────────────────────────────────────────────
   editToken: string;
   editTokenCreatedAt?: string;       // [v2]
-  verificationChallenges: Record<string, string>; // platform → challenge code (v1 format)
+  verificationChallenges: Record<string, VerificationChallenge>; // platform → challenge record (v2)
 
   // ── Metadata ───────────────────────────────────────────────────────────────
   createdAt: string;

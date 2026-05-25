@@ -62,7 +62,8 @@ export const createVerificationChallenge = (
   handle: string,
   platform: string,
   editToken: string,
-): string => _getStore().createVerificationChallenge(handle, platform, editToken);
+): { code: string; expiresAt: string } =>
+  _getStore().createVerificationChallenge(handle, platform, editToken);
 
 export const confirmSocialProof = (
   handle: string,

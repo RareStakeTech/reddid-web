@@ -39,13 +39,13 @@ export interface DataStore {
   // ── Social proofs ──────────────────────────────────────────────────────────
   /**
    * Generate (or regenerate) a verification challenge code.
-   * Returns the 8-char hex code.
+   * Returns the code and its expiry so the UI can display a countdown.
    */
   createVerificationChallenge(
     handle: string,
     platform: string,
     editToken: string,
-  ): string;
+  ): { code: string; expiresAt: string };
   /**
    * Record a social proof after the user claims to have posted the challenge.
    * v0.3: trust-based. v0.5: auto-verify via platform API.
