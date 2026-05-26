@@ -174,9 +174,9 @@
 
 | ID | Task | File(s) | Acceptance Criteria | Status |
 |----|------|---------|---------------------|--------|
-| S4-01 | SQLite data store (better-sqlite3) | src/lib/store/sqlite-store.ts | Passes all DataStore interface methods; WAL mode; atomic writes | [ ] |
-| S4-02 | Migration script (data/db.json → SQLite) | scripts/migrate-to-sqlite.ts | All existing identities preserved; checksums verified; reversible via REDDID_DB_ENGINE=json | [ ] |
-| S4-03 | Atomic writes + WAL mode | sqlite-store.ts | Part of S4-01 — no corruption under concurrent requests | (see S4-01) |
+| S4-01 | SQLite data store (better-sqlite3) | src/lib/store/sqlite-store.ts | Passes all DataStore interface methods; WAL mode; atomic writes | ✅ DONE v0.4.27 |
+| S4-02 | Migration script (data/db.json → SQLite) | scripts/migrate-to-sqlite.ts | All existing identities preserved; checksums verified; reversible via REDDID_DB_ENGINE=json | ✅ DONE v0.4.27 |
+| S4-03 | Atomic writes + WAL mode | sqlite-store.ts | Part of S4-01 — WAL mode + transactions on all writes | ✅ DONE v0.4.27 |
 | S4-04 | Railway deployment | railway.toml | Live at redd.love; persistent volume at /app/data; zero-downtime deploys | [ ] |
 | S4-05 | Environment variable management | src/lib/config.ts, .env.example | All required vars documented; REDDID_DB_ENGINE, ADMIN_SECRET, DB_PATH confirmed | ✅ DONE v0.4.26 |
 | S4-06 | Rate limiting (SQLite-backed) | src/lib/rate-limit.ts | rate_limit_counters table; persists across restarts; per-IP and per-handle | [ ] |

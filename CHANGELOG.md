@@ -16,6 +16,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.27] — 2026-05-26 — Sprint 4: S4-01+02+03 SQLite store + migration
+
+### Added (S4-01 + S4-03 — SqliteDataStore with WAL mode)
+- `src/lib/store/sqlite-store.ts` — NEW: `SqliteDataStore` implementing the full `DataStore` interface
+  - WAL journal mode (`PRAGMA journal_mode = WAL`) — concurrent reads don't block writes
+  - `synchronous = NORMAL` — safe with WAL; better performance than FULL
+  - `foreign_keys = ON`
+  - **Schema**: `identities(handle PK, data TEXT, rdd_address indexed, created_at, updated_at, revoked_at)` + `social_proof_index(handle, platform PK, username)` + `abuse_reports` + `revocation_events` + `rate_limit_counters`
+  - **Hybrid storage**: full Identity JSON in `data` column; indexed columns denormalized for fast lookup
+  - **`saveIdentity()`**: private helper that upserts identity + rebuilds social_proof_index atomically in one transaction
+  - **All 25 DataStore interface methods** implemented: all identity CRUD, social proofs, agents, wallets, abuse reports, reserve snapshot
+  - **Bonus S4-06 groundwork**: `checkRateLimit()` method for SQLite-backed rate limiting (replaces in-memory Map in rate-limit.ts)
+  - **Audit trail**: `deleteIdentity()` writes to `revocation_events` table before deleting the identity row
+  - Multi-instance warning documented in code and ARCHITECTURE.md
+- `src/lib/store/index.ts` — `getStore()` now branches on `DB_ENGINE`:
+  - `'sqlite'` → instantiates `SqliteDataStore()` (no `runMigrations()` — SQLite bootstraps its own schema)
+  - `'json'` → existing `JsonFileDataStore` path (unchanged)
+  - Exports `SqliteDataStore` for direct use by rate-limit module
+- `package.json` — Added `migrate:sqlite` and `migrate:sqlite:dry` scripts
+
+### Added (S4-02 — Migration script)
+- `scripts/migrate-to-sqlite.ts` — One-time migration from `data/db.json` → `data/reddid.db`
+  - CLI: `npm run migrate:sqlite:dry` (preview) / `npm run migrate:sqlite` (execute)
+  - Applies JSON schema migrations (v0→v2) before writing to SQLite
+  - Upserts: safe to re-run; existing SQLite is backed up to `.pre-migration.bak` before overwrite
+  - Row-count verification at the end; exits non-zero if mismatch
+  - Clear next-steps output (how to enable, how to roll back)
+- **Migration smoke-test result** (2026-05-26):
+  - 3 identities → 3 ✅  |  1 social proof index entry  |  0 abuse reports → 0 ✅
+  - WAL mode confirmed: `journal_mode = wal`
+  - Rollback path: set `REDDID_DB_ENGINE=json` to switch back instantly (db.json preserved)
+
+### Build results (v0.4.27)
+- `tsc --noEmit` → exit 0 ✅
+- `npm run lint` → exit 0 ✅
+- `npm run build` → exit 0, 26 static pages ✅
+- `npm run migrate:sqlite:dry` → dry-run passes, 3 identities listed ✅
+- `npm run migrate:sqlite` → migration passes, row counts verified ✅
+- SQLite direct verify → WAL mode confirmed, handles accessible ✅
+
+---
+
 ## [0.4.26] — 2026-05-26 — Sprint 4: S4-05 env vars + S4-07+08 security headers
 
 ### Added (S4-07 + S4-08 — HTTPS enforcement + security headers)

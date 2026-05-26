@@ -16,6 +16,7 @@
 
 import type { DataStore } from './interface';
 import { JsonFileDataStore } from './json-file-store';
+import { SqliteDataStore } from './sqlite-store';
 import { runMigrations } from '@/lib/migrate';
 import { DB_ENGINE } from '@/lib/config';
 
@@ -24,18 +25,21 @@ let _store: DataStore | null = null;
 export function getStore(): DataStore {
   if (!_store) {
     if (DB_ENGINE === 'sqlite') {
-      // SqliteDataStore — coming in Sprint 4 S4-01.
-      // Set REDDID_DB_ENGINE=sqlite only after sqlite-store.ts is implemented.
-      throw new Error(
-        '[getStore] REDDID_DB_ENGINE=sqlite is set but SqliteDataStore is not yet implemented. ' +
-        'Leave REDDID_DB_ENGINE unset (or set to "json") to use the current JSON file store.'
-      );
+      // SqliteDataStore: no JSON migration needed — the SQLite file bootstraps its
+      // own schema in the constructor. runMigrations() is JSON-only; skip it here.
+      // Run `npm run migrate:sqlite` (scripts/migrate-to-sqlite.ts) once to import
+      // existing data/db.json records before flipping REDDID_DB_ENGINE=sqlite.
+      _store = new SqliteDataStore();
+    } else {
+      // Default: JSON file store. Runs schema migrations exactly once per process.
+      runMigrations();
+      _store = new JsonFileDataStore();
     }
-    // Default: JSON file store. Runs schema migrations exactly once per process.
-    runMigrations();
-    _store = new JsonFileDataStore();
   }
   return _store;
 }
+
+/** Expose SqliteDataStore for the rate-limit module when using sqlite engine. */
+export { SqliteDataStore } from './sqlite-store';
 
 export type { DataStore } from './interface';

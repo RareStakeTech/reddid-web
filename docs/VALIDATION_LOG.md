@@ -519,10 +519,55 @@ Routes: 26 static pages compiled
 | .env.example — ADMIN_SECRET | Documented as REQUIRED for admin queue; generation command included |
 
 ### Known issues after Sprint 4 Checkpoint 1
-- SQLite store not yet implemented (S4-01 next)
-- Rate limiting still in-memory (S4-06 blocked on S4-01)
-- Not yet deployed to Railway (S4-04 next after S4-01)
+- ~~SQLite store not yet implemented~~ → ✅ Done in v0.4.27
+- Rate limiting still in-memory (S4-06 SQLite-backed rate limiting is next)
+- Not yet deployed to Railway (S4-04 — needs env var setup in Railway dashboard first)
 - CSP uses unsafe-inline/unsafe-eval (Next.js App Router requirement; nonce-based hardening in v0.5)
+
+---
+
+## Sprint 4 — Checkpoint 2: S4-01+02+03 SQLite store (v0.4.27)
+
+### Build validation
+```
+Command: npx tsc --noEmit && npm run lint && npm run build
+Status: PASS ✅
+Date: 2026-05-26
+Version: 0.4.27
+Routes: 26 static pages compiled
+```
+
+### SQLite migration validation
+```
+Command: npm run migrate:sqlite:dry  →  PASS (3 identities listed)
+Command: npm run migrate:sqlite      →  PASS
+  identities:    3 → 3  ✅
+  social_proof_index: 1 entries
+  abuse_reports: 0 → 0  ✅
+
+Direct SQLite verification:
+  WAL mode: wal ✅
+  handles: ratelimitcheck, satoshi, walkthrough26 ✅
+```
+
+### Sprint 4 changes validated (v0.4.27)
+
+| Change | Validation |
+|--------|-----------|
+| sqlite-store.ts — SqliteDataStore | Implements all 25 DataStore interface methods; tsc confirms |
+| sqlite-store.ts — WAL mode | `PRAGMA journal_mode = WAL` confirmed in smoke-test |
+| sqlite-store.ts — saveIdentity() transaction | Single SQLite transaction for upsert + index rebuild |
+| sqlite-store.ts — deleteIdentity() audit | Writes to revocation_events before DELETE |
+| sqlite-store.ts — checkRateLimit() | SQLite-backed rate limiting method (S4-06 groundwork) |
+| store/index.ts — DB_ENGINE=sqlite branch | Instantiates SqliteDataStore; skips runMigrations() |
+| migrate-to-sqlite.ts — dry-run mode | Lists would-migrate identities without writes |
+| migrate-to-sqlite.ts — execute mode | Upserts all records; verifies row counts; backs up existing .db |
+| package.json — migrate:sqlite scripts | `npm run migrate:sqlite` and `migrate:sqlite:dry` |
+
+### Known issues after Sprint 4 Checkpoint 2
+- Rate limiting still in-memory for JSON store (S4-06 next — integrate checkRateLimit() into rate-limit.ts)
+- Not yet deployed to Railway (S4-04 — set REDDID_DB_PATH, REDDID_DB_ENGINE, ADMIN_SECRET, NEXT_PUBLIC_REDDID_BASE_URL in Railway dashboard, configure persistent volume at /app/data)
+- data/reddid.db added to repo data/ directory — should be in .gitignore
 
 ---
 
