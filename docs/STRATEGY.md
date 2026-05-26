@@ -56,7 +56,7 @@
 
 **Architecture concern: editToken is a bearer token stored in the user's browser.** It doesn't expire, it can't be rotated without knowing the current token, and there's no recovery path if lost. For v0.4, this is acceptable — document it clearly. For v0.5, move to signed JWT with 90-day expiry and refresh flow.
 
-**Missing: Server-side input validation layer.** All API routes should run bio/displayName/website through a sanitize function before writing to the database. Implement `sanitizeText(s, maxLen)` in `lib/validation.ts`. bio max 280 chars, displayName max 60 chars, website must be https:// URL.
+**Missing: Server-side input validation layer.** All API routes should run bio/displayName/website through a sanitize function before writing to the database. Implement `sanitizeText(s, maxLen)` in `lib/validation.ts`. bio max 160 chars (store enforced — confirmed in json-file-store.ts), displayName max 60 chars, website must be https:// URL.
 
 **Positive:** The platforms.ts + DataStore + adapter pattern is a genuinely good foundation. The adapter interfaces (PaymentRailAdapter, BridgeStatusAdapter, SocialProofAdapter) mean adding new capabilities doesn't require touching existing code. Keep this pattern.
 

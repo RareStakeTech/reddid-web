@@ -555,7 +555,7 @@ export default function RegisterPage() {
           <a href="/terms" style={{ color: 'var(--text-dim)', textDecoration: 'underline' }}>Terms of Use</a>
           {' '}and{' '}
           <a href="/privacy" style={{ color: 'var(--text-dim)', textDecoration: 'underline' }}>Privacy Policy</a>.
-          {' '}v0.1 beta · Cryptographic address verification ships in v0.2.
+          {' '}v0.4 beta · Cryptographic address-ownership verification ships in v0.5.
         </p>
       </form>
     </div>

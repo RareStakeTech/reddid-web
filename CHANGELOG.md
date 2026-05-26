@@ -17,6 +17,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.18] — 2026-05-26
+
+### Added
+- **`docs/CURRENT_STATE_AUDIT.md`** — comprehensive feature classification: Real / Partial / Mock / Planned / Stale for every system feature; 9 categories; reconciliation issues table; scorecard (64 real, 7 partial, 4 mock, 15 planned)
+- **`docs/VALIDATION_LOG.md`** — evidence gate with actual build command results: tsc PASS, ESLint PASS, Next.js build PASS (✓ 8.6s, 25 static pages); love-button build:chrome PASS (2.10.0.zip); lint warnings documented with assessment
+- **`docs/UX_TEST_PLAN.md`** — 15 numbered test scenarios (T-01 through T-15) + Jay's First UX Walkthrough (15-item checklist for founder-level QA pass)
+- **`docs/SPRINT_PLAN.md`** — full Sprint 0–6 plan: goals, user value, tasks table, acceptance criteria, risks, must-not-break, gamification rules applied, dependency map; "Not Building" section with explicit rejections
+- **`docs/GITHUB_ISSUES_NEXT.md`** — 18 structured issue drafts: problem, solution, acceptance criteria, test steps, labels, priority, sprint; covers P0 security issues through P4 future items
+
+### Changed
+- **`love-button/package.json`** — version bumped from "2.5.0" to "2.10.0" (was critically mismatched with manifest.json; now in sync)
+- **`reddid-web/package.json`** — version bumped from "0.1.0" to "0.4.18" (was never updated despite v0.4 work)
+- **`src/app/register/page.tsx`** — footer version string corrected: "v0.1 beta · … ships in v0.2" → "v0.4 beta · … ships in v0.5" (stale version reference removed)
+
+### Fixed
+- **Documentation reconciliation**: love-button version mismatch (2.5.0 vs 2.10.0) — fixed; reddid-web version (0.1.0) — fixed; register page version string — fixed
+- **Bio char limit confirmed as 160** across form (maxLength=160), store (truncate to 160), and UX test plan; STRATEGY.md reference to 280 corrected
+
+---
+
 ## [0.4.17] — 2026-05-26
 
 ### Added
