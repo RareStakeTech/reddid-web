@@ -17,6 +17,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.16] — 2026-05-25
+
+### Changed
+- **`docs/ROADMAP.md`** — E6 entry updated: "all 13 content scripts" replacing "7 util-based"; v0.4.16 version history entry added; last-updated bumped
+- **love-button v2.9** — `tipUrlTarget` setting now applies to the remaining 6 standalone content scripts: Twitter/X, Reddit, YouTube, Twitch, Instagram, TikTok; `injectTipButton()` in each accepts `tipTarget` as third param; `checkPage()` fetches storage and GET_API_BASE in parallel with `Promise.all()`; options hint text updated to reflect full coverage; Firefox copies mirrored
+
+---
+
 ## [0.4.15] — 2026-05-25
 
 ### Changed

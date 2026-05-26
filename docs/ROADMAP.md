@@ -1,6 +1,6 @@
 # ReddWeb Roadmap
 
-**Last updated:** 2026-05-25 (v0.4.15)
+**Last updated:** 2026-05-25 (v0.4.16)
 
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
@@ -129,7 +129,7 @@ These live in the `love-button` repo but are user-facing improvements to the ext
 | E3 | ✅ **Popup: keyboard navigation** — ArrowDown/Up cycle history; Escape returns focus to search; Enter/Space activates | Done love-button v2.6 |
 | E4 | ✅ **Extension: embed badge HTML snippet** — "📋 Embed" ghost button copies a self-contained `<a>` button badge (pure inline CSS, no external assets) | Done love-button v2.7 |
 | E5 | **Content scripts: RDD address detection** — scan page text for `R[A-Za-z0-9]{33}` / `rdd1[a-z0-9]{39}` patterns; offer a "Look up this address on ReddID" context menu option | Many creators share raw addresses; this bridges the gap until they register |
-| E6 | ✅ **Extension: configurable tip URL target** — Settings dropdown: Tip page vs Payment page; applies to popup + 7 util-based content scripts | Done love-button v2.8 |
+| E6 | ✅ **Extension: configurable tip URL target** — Settings dropdown: Tip page vs Payment page; applies to popup + all 13 content scripts | Done love-button v2.8/v2.9 |
 | E7 | **Extension popup: show social proof badges** — display each linked platform with 🔗/○ badge inline with the identity result | Currently only shows address and balance tabs; social proof shown but could be richer |
 
 ### Deployment & Production Readiness
@@ -356,3 +356,4 @@ Ordered by dependency. Do not skip steps.
 | v0.4.13 | 2026-05-25 | ARCHITECTURE.md; ROADMAP stale items fixed; love-button v2.6 E1/E2/E3 marked done |
 | v0.4.14 | 2026-05-25 | Edit page wallet management section — add, set-primary, remove RDD wallets inline |
 | v0.4.15 | 2026-05-25 | ROADMAP updated: E4/E6 marked done; love-button v2.7 embed badge, v2.8 tip target |
+| v0.4.16 | 2026-05-25 | love-button v2.9: E6 extended to all 13 content scripts (Twitter/X, Reddit, YouTube, Twitch, Instagram, TikTok) |
