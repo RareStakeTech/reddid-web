@@ -18,6 +18,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.9] — 2026-05-25
+
+### Changed
+- **`explore/page.tsx`** (U18) — Load-more pagination added; default page size 20; "Load more · N remaining" button appears below the grid when there are more results; clicking appends the next 20; `displayLimit` resets to 20 whenever filters or sort change; prevents long initial renders as the directory grows; no API changes required (data is already client-side)
+
+---
+
 ## [0.4.8] — 2026-05-25
 
 ### Changed

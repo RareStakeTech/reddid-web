@@ -20,12 +20,16 @@ const PLATFORM_ICON: Record<string, string> = Object.fromEntries(
 
 const ALL_PLATFORMS = LIVE_PLATFORMS.map(p => p.id);
 
+const PAGE_SIZE = 20;
+
 export default function ExplorePage() {
   const [identities, setIdentities] = useState<PublicIdentity[]>([]);
   const [loading, setLoading]       = useState(true);
   const [query, setQuery]           = useState('');
   const [platform, setPlatform]     = useState('');
   const [sort, setSort]             = useState<'newest' | 'alpha'>('newest');
+  // U18 — load-more pagination
+  const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
 
   useEffect(() => {
     fetch('/api/explore')
@@ -36,6 +40,9 @@ export default function ExplorePage() {
   }, []);
 
   const filtered = useMemo(() => {
+    // Reset to first page whenever filters/sort change
+    setDisplayLimit(PAGE_SIZE);
+
     let list = identities;
     if (query.trim()) {
       const q = query.toLowerCase().trim().replace(/^@/, '');
@@ -54,6 +61,10 @@ export default function ExplorePage() {
     // newest first is default from API
     return list;
   }, [identities, query, platform, sort]);
+
+  // U18 — slice for current page
+  const visible = filtered.slice(0, displayLimit);
+  const hasMore = filtered.length > displayLimit;
 
   const dimStyle: React.CSSProperties = { color: 'var(--text-dim)', fontSize: '0.72rem' };
 
@@ -224,7 +235,7 @@ export default function ExplorePage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-          {filtered.map(identity => (
+          {visible.map(identity => (
             <Link
               key={identity.handle}
               href={`/${identity.handle}`}
@@ -289,6 +300,30 @@ export default function ExplorePage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* U18 — Load more button */}
+      {!loading && hasMore && (
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setDisplayLimit(n => n + PAGE_SIZE)}
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              color: 'var(--text-muted)',
+              fontFamily: "'Rubik', sans-serif",
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              padding: '10px 28px',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s',
+            }}
+          >
+            Load more · {filtered.length - displayLimit} remaining
+          </button>
         </div>
       )}
 

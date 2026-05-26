@@ -112,7 +112,7 @@ This roadmap reflects the current implementation plan. It is a working document 
 |---|------|-----------------|---------------|
 | U16 | ✅ **Handle search results page** — `/search?q=` client page using `/api/search`; ranked results with handle, name, bio snippet (120 chars), platform badges with verified colour coding | `src/app/search/page.tsx` + `SearchClient.tsx` | Done v0.4.7 |
 | U17 | ✅ **Profile completion indicator** — progress bar + 7 step-chips on edit page; Handle, RDD address, Display name, Bio, Website, Social link, Verified link; updates live as user types; green when all done | `src/app/edit/[handle]/page.tsx` | Done v0.4.8 |
-| U18 | **`/explore` load-more / pagination** — "Load more" button after 20 results instead of rendering all at once | `src/app/explore/page.tsx` | Will matter as the directory grows; prevents long initial render |
+| U18 | ✅ **`/explore` load-more / pagination** — "Load more · N remaining" button after 20 results; resets to page 1 on filter/sort change | `src/app/explore/page.tsx` | Done v0.4.9 |
 | U19 | ✅ **Homepage — recent registrations widget** — horizontal scroll row showing last 5 registered handles; handle, display name, platform icons; server-side from `getAllIdentities()`; "View all →" link to /explore | `src/app/page.tsx` | Done v0.4.7 |
 | U20 | ✅ **`/card/[handle]` — QR download** — "Save QR as PNG" button via XMLSerializer → Canvas 512×512, same approach as U12; `CardClientButtons.tsx` client component also fixes the `onClick`-in-server-component bug | `src/app/card/[handle]/CardClientButtons.tsx` | Done v0.4.7 |
 
