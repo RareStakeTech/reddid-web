@@ -87,12 +87,12 @@ This roadmap reflects the current implementation plan. It is a working document 
 |---|------|-----------------|---------------|
 | U1 | ✅ **Custom 404 page** — branded `not-found.tsx` with handle search suggestion and links to /register and /explore | `src/app/not-found.tsx` | Done v0.4.2 |
 | U2 | ✅ **Error boundary page** — branded `error.tsx` with reload button | `src/app/error.tsx` | Done v0.4.2 |
-| U3 | **`robots.txt`** — allow all, disallow `/api/`, point to sitemap | `public/robots.txt` | Missing; Google treats all paths as uncrawlable by default |
-| U4 | **`sitemap.ts`** — dynamic Next.js route handler; includes static pages + all registered handle pages from `getAllIdentities()` | `src/app/sitemap.ts` | Google can't discover `/@handle` pages without this |
-| U5 | **Tip page: social proof badges → hyperlinks** — wrap each PlatformBadge in `<a href={platformProfileUrl(platform, username)}>` | `src/app/[handle]/page.tsx` | Badges show username but aren't clickable; users expect to be able to click through to the profile |
-| U6 | **Post-registration next-step prompt** — in the `?new=1` success banner, add "→ Verify your social accounts" CTA linking to `/verify?handle={handle}` | `src/app/[handle]/page.tsx` | After registering, users don't know what to do next; this closes the loop from register → verify |
-| U7 | **`/explore` empty search state** — when filtered results = 0, show encouraging message and "clear search" button instead of blank space | `src/app/explore/page.tsx` | Current blank state looks like a bug |
-| U8 | **`/explore` result count** — show "Showing N of M creators" above the grid | `src/app/explore/page.tsx` | Helps users understand filter scope |
+| U3 | ✅ **`robots.txt`** — allow all, disallow `/api/`, point to sitemap | `public/robots.txt` | Done v0.4.3 |
+| U4 | ✅ **`sitemap.ts`** — dynamic Next.js route handler; includes static pages + all registered handle pages from `getAllIdentities()` | `src/app/sitemap.ts` | Done v0.4.3 |
+| U5 | ✅ **Tip page: social proof badges → hyperlinks** — wrap each PlatformBadge in `<a href={platformProfileUrl(platform, username)}>` | `src/app/[handle]/page.tsx` | Done v0.4.3 |
+| U6 | ✅ **Post-registration next-step prompt** — in the `?new=1` success banner, add "→ Verify your social accounts" CTA linking to `/verify?handle={handle}` | `src/app/[handle]/page.tsx` | Done v0.4.3 |
+| U7 | ✅ **`/explore` empty search state** — when filtered results = 0, show encouraging message and "clear search" button instead of blank space | `src/app/explore/page.tsx` | Done v0.4.3 |
+| U8 | ✅ **`/explore` result count** — show "Showing N of M creators" above the grid | `src/app/explore/page.tsx` | Done v0.4.3 |
 
 ### Tier 2 — 1–2 hours each
 

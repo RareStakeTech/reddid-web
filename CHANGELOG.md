@@ -18,6 +18,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.3] — 2026-05-25
+
+### Added
+- **`public/robots.txt`** (U3) — `Allow: /`, `Disallow: /api/`, `Sitemap:` pointer to `https://redd.love/sitemap.xml`
+- **`src/app/sitemap.ts`** (U4) — dynamic Next.js sitemap; 11 static routes (home, explore, register, platforms, verify, staking, roadmap, bridge, reserve, privacy, terms) + one entry per public `/@handle` using `getAllIdentities()`; `lastModified` uses `identity.updatedAt`; silently omits handle routes if data layer unavailable at build time
+
+### Changed
+- **`[handle]/page.tsx`** (U5) — social proof platform badges are now clickable `<a>` links opening the creator's profile (`platformProfileUrl()` from `@/lib/platforms`); `target="_blank" rel="noopener noreferrer"` with `title` tooltip; badges with no known URL fallback to plain span as before
+- **`[handle]/page.tsx`** (U6) — `?new=1` success banner now includes a "Verify social accounts →" CTA linking to `/verify?handle={handle}`; gives newly registered creators an immediate next step
+- **`explore/page.tsx`** (U7) — empty search state replaced with branded block: magnifying glass icon, human-readable reason ("No creators match those filters" vs "No creators yet"), contextual description, "Clear search" button when filters are active
+- **`explore/page.tsx`** (U8) — result count bar between controls and grid: "Showing N of M creators" when filters are active, "N creators registered" otherwise; "Clear filters ×" inline button resets both query and platform filter simultaneously
+
+---
+
 ## [0.4.2] — 2026-05-25
 
 ### Added

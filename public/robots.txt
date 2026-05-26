@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Keep API internals out of search indexes
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://redd.love/sitemap.xml

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, X } from 'lucide-react';
 import { LIVE_PLATFORMS, PLATFORM_MAP } from '@/lib/platforms';
 
 interface PublicIdentity {
@@ -73,7 +73,7 @@ export default function ExplorePage() {
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         {/* Search */}
         <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 8, padding: '0 12px', gap: 8 }}>
           <Search size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
@@ -109,15 +109,82 @@ export default function ExplorePage() {
         </select>
       </div>
 
+      {/* U8 — Result count + clear filters */}
+      {!loading && identities.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+            minHeight: 22,
+          }}
+        >
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+            {query || platform
+              ? `Showing ${filtered.length} of ${identities.length} creator${identities.length !== 1 ? 's' : ''}`
+              : `${identities.length} creator${identities.length !== 1 ? 's' : ''} registered`}
+          </span>
+          {(query || platform) && (
+            <button
+              onClick={() => { setQuery(''); setPlatform(''); }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 5,
+                color: 'var(--text-dim)',
+                fontSize: '0.72rem',
+                padding: '3px 9px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <X size={11} />
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Grid */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-dim)' }}>Loading creators…</div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>No creators found{query || platform ? ' for those filters' : ''}.</p>
-          {!query && !platform && (
+          {/* U7 — branded empty state */}
+          <div style={{ fontSize: '2rem', marginBottom: 12, opacity: 0.35 }}>
+            {query || platform ? '🔍' : 'Ɍ'}
+          </div>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600, fontFamily: "'Rubik', sans-serif" }}>
+            {query || platform ? 'No creators match those filters' : 'No creators yet'}
+          </p>
+          <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginBottom: 20 }}>
+            {query || platform
+              ? 'Try clearing your search or removing the platform filter.'
+              : 'Be the first to register your ReddCoin handle.'}
+          </p>
+          {(query || platform) ? (
+            <button
+              onClick={() => { setQuery(''); setPlatform(''); }}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 7,
+                color: 'var(--text-muted)',
+                fontSize: '0.85rem',
+                padding: '8px 18px',
+                cursor: 'pointer',
+                fontFamily: "'Rubik', sans-serif",
+                fontWeight: 600,
+              }}
+            >
+              Clear search
+            </button>
+          ) : (
             <Link href="/register" style={{ color: 'var(--redd-red)', textDecoration: 'none', fontWeight: 700, fontFamily: "'Rubik', sans-serif" }}>
-              Be the first → Register your @handle
+              Register your @handle →
             </Link>
           )}
         </div>

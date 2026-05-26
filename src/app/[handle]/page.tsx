@@ -5,6 +5,7 @@ import { ExternalLink, Wallet, Zap, CheckCircle2 } from 'lucide-react';
 import { getIdentityByHandle } from '@/lib/db';
 import { getAddressType, buildBip21Uri } from '@/lib/validation';
 import { primaryRddAddress } from '@/lib/types';
+import { platformProfileUrl } from '@/lib/platforms';
 import CopyButton from '@/components/CopyButton';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import ShareButton from '@/components/ShareButton';
@@ -154,10 +155,25 @@ export default async function TipPage({ params, searchParams }: Props) {
           }}
         >
           <CheckCircle2 size={18} />
-          <span>
+          <span style={{ flex: 1 }}>
             <strong>@{identity.handle}</strong> registered successfully! This is your public tip page —
             share the URL to receive Ɍ RDD tips.
           </span>
+          <Link
+            href={`/verify?handle=${identity.handle}`}
+            style={{
+              color: '#4ade80',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              fontFamily: "'Rubik', sans-serif",
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+              borderBottom: '1px solid rgba(74,222,128,0.4)',
+              paddingBottom: 1,
+            }}
+          >
+            Verify social accounts →
+          </Link>
         </div>
       )}
 
@@ -250,7 +266,8 @@ export default async function TipPage({ params, searchParams }: Props) {
                       proof.verificationStatus === 'verified'
                         ? 'challenge-post-verified'
                         : 'self-reported';
-                    return (
+                    const profileUrl = platformProfileUrl(proof.platform, proof.username);
+                    const badge = (
                       <PlatformBadge
                         key={proof.platform}
                         platform={proof.platform}
@@ -258,6 +275,18 @@ export default async function TipPage({ params, searchParams }: Props) {
                         trustLevel={tl}
                       />
                     );
+                    return profileUrl ? (
+                      <a
+                        key={proof.platform}
+                        href={profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none' }}
+                        title={`View @${proof.username} on ${proof.platform}`}
+                      >
+                        {badge}
+                      </a>
+                    ) : badge;
                   })}
                 </div>
               )}
