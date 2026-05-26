@@ -18,6 +18,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.4] — 2026-05-25
+
+### Fixed
+- **CI build warnings eliminated** — `themeColor` moved from `metadata` export to `viewport` export in `layout.tsx` (Next.js 15+ deprecation; was generating 12 `⚠ Unsupported metadata themeColor` warnings during static page generation)
+- **ESLint lint errors eliminated (0 warnings, 0 errors)** — 15 accumulated lint warnings now gone:
+  - `eslint.config.mjs`: added `varsIgnorePattern: '^_'` and `caughtErrorsIgnorePattern: '^_'` alongside existing `argsIgnorePattern: '^_'`, so `_`-prefixed destructured vars (e.g. `_et`, `_vc`, `_ptx`) are properly ignored
+  - `ShareButton.tsx`: removed unused `Copy` import from lucide-react
+  - `api/identities/[handle]/route.ts`: removed unused `isValidHandle` import
+  - `lib/db.ts`: removed unused `AgentIdentity` type import
+  - `lib/providers/mock/mock-credential-provider.ts`: renamed `revokedBy` arg to `_revokedBy`
+  - `components/LiveSession.tsx`: removed unused `InitData` interface
+  - `app/edit/[handle]/page.tsx`: renamed `identity` state to `_identity` (state is written via setIdentity but identity value is never read in JSX; state retained for future use)
+
+### Added
+- **`public/brand/` — official ReddCoin brand assets (SVG Pack v2.1)** — all 17 SVG files from `brand.reddcoin.com`: full color logo, dark/light/mono/black/white variants, tag versions, and pinwheel mark in all colour variants; sourced from the official brand kit
+- **NavBar logo updated to official brand** — `<Image>` component now renders `ReddCoin-Pinwheel-CLR-256.svg` (28×28, `unoptimized`, `priority`) instead of the hand-made "REDD" text badge; wordmark changed to "ReddID Next" with correct weight hierarchy
+- **`layout.tsx` — favicon metadata updated** — `icons` metadata now points to the SVG pinwheel as primary icon with `.ico` fallback; Apple touch icon also set to pinwheel SVG
+- **`manifest.webmanifest` — SVG icon entry added** — `ReddCoin-Pinwheel-CLR-256.svg` added with `"sizes": "any"` as primary icon so PWA install succeeds without PNG icons; PNG entries retained for future `icon-192.png` / `icon-512.png` generation
+
+---
+
 ## [0.4.3] — 2026-05-25
 
 ### Added

@@ -18,7 +18,7 @@ interface IdentityPublic {
 export default function EditPage({ params }: PageProps) {
   const { handle } = use(params);
 
-  const [identity, setIdentity]       = useState<IdentityPublic | null>(null);
+  const [_identity, setIdentity]      = useState<IdentityPublic | null>(null);
   const [loading, setLoading]         = useState(true);
   const [notFound, setNotFound]       = useState(false);
 

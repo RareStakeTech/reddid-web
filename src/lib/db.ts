@@ -30,7 +30,6 @@ import { getStore as _getStore } from './store';
 import type {
   Identity,
   PublicIdentity,
-  AgentIdentity,
   PublicAgent,
   SocialProof,
   CreateIdentityInput,

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X, ArrowLeftRight, Users, Zap, Layers } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -42,29 +43,26 @@ export default function NavBar() {
           height: 56,
         }}
       >
-        {/* Brand */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <span
-            style={{
-              background: 'var(--redd-red)',
-              color: 'white',
-              fontFamily: "'Rubik', sans-serif",
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              letterSpacing: '0.14em',
-              padding: '3px 8px',
-              borderRadius: 4,
-              textTransform: 'uppercase',
-            }}
-          >
-            REDD
+        {/* Brand — official ReddCoin pinwheel + ReddID wordmark */}
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          {/* Official pinwheel mark — brand.reddcoin.com SVG pack v2.1 */}
+          <Image
+            src="/brand/ReddCoin-Pinwheel-CLR-256.svg"
+            alt="ReddCoin pinwheel"
+            width={28}
+            height={28}
+            priority
+            unoptimized
+          />
+          <span style={{ color: 'var(--text-primary)', fontFamily: "'Rubik', sans-serif", fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.01em' }}>
+            ReddID
           </span>
-          <span style={{ color: 'var(--text-primary)', fontFamily: "'Rubik', sans-serif", fontWeight: 600, fontSize: '1rem' }}>
-            ID Next
+          <span style={{ color: 'var(--text-dim)', fontFamily: "'Rubik', sans-serif", fontWeight: 500, fontSize: '0.9rem' }}>
+            Next
           </span>
           <span
             style={{
-              fontSize: '0.65rem',
+              fontSize: '0.6rem',
               background: 'rgba(227,6,19,0.1)',
               color: 'var(--redd-red-light)',
               border: '1px solid rgba(227,6,19,0.2)',
@@ -72,6 +70,7 @@ export default function NavBar() {
               borderRadius: 4,
               fontWeight: 600,
               letterSpacing: '0.05em',
+              marginLeft: 2,
             }}
           >
             v0.4 beta

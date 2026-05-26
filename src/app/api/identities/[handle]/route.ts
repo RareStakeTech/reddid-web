@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { getIdentityByHandle, updateIdentity, publicIdentity } from '@/lib/db';
-import { sanitizeHandle, isValidHandle, isValidUrl } from '@/lib/validation';
+import { sanitizeHandle, isValidUrl } from '@/lib/validation';
 
 export async function GET(
   _req: NextRequest,

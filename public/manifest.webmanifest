@@ -8,6 +8,18 @@
   "theme_color": "#E30613",
   "icons": [
     {
+      "src": "/brand/ReddCoin-Pinwheel-CLR-256.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/ReddCoin-Pinwheel-CLR-256.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",

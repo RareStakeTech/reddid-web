@@ -29,7 +29,12 @@ export default [
       'react-hooks/exhaustive-deps': 'warn',
       // Relax a few rules that are noisy for a prototype
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // Allow _-prefixed vars for intentional discards (destructuring, etc.)
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
     },
   },
 ];

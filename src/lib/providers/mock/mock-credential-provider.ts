@@ -73,7 +73,7 @@ export class MockCredentialProvider implements CredentialProvider {
     return Array.from(_store.values()).filter(c => c.subject === handle);
   }
 
-  revoke(id: string, revokedBy: string, _reason: string): Credential {
+  revoke(id: string, _revokedBy: string, _reason: string): Credential {
     const credential = _store.get(id);
     if (!credential) throw new Error(`Credential ${id} not found`);
     const revoked: Credential = { ...credential, status: 'revoked' };

@@ -1,6 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import NavBar from '@/components/NavBar';
+
+// themeColor must live in viewport export (Next.js 15+ requirement)
+export const viewport: Viewport = {
+  themeColor: '#E30613',
+};
 
 export const metadata: Metadata = {
   title: 'ReddID Next — Social Identity for ReddCoin',
@@ -12,7 +17,13 @@ export const metadata: Metadata = {
     siteName: 'ReddID Next',
   },
   manifest: '/manifest.webmanifest',
-  themeColor: '#E30613',
+  icons: {
+    icon: [
+      { url: '/brand/ReddCoin-Pinwheel-CLR-256.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '48x48' },
+    ],
+    apple: '/brand/ReddCoin-Pinwheel-CLR-256.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
