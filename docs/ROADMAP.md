@@ -1,6 +1,6 @@
 # ReddWeb Roadmap
 
-**Last updated:** 2026-05-25 (v0.4.7)
+**Last updated:** 2026-05-25 (v0.4.12)
 
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
@@ -57,12 +57,14 @@ This roadmap reflects the current implementation plan. It is a working document 
 - [ ] Public agent disclosure page (`/[handle]/agents`)
 - [ ] Payment intent API (`POST /api/payments`, `GET /api/payments/[id]`)
 - [x] **Payment request page (`/pay/[handle]`)** — BIP21 QR, preset + custom amount picker, Open in wallet, copy URI; non-custodial (0.4.1)
-- [ ] User guide page (`/guide`)
+- [x] **User guide page (`/guide`)** — step-by-step getting-started; install Love Button, register handle, link social accounts, share tip page (U10, v0.4.5)
 - [x] **Privacy policy page (`/privacy`)** — 10 sections, store-submission ready (0.4.1)
 - [x] **Terms of use page (`/terms`)** — 10 sections, store-submission ready (0.4.1)
 - [x] **Register page social accounts** — 13-platform selector, self-reported social links at registration time, API route accepts `socialLinks[]` (0.4.1)
-- [ ] Proper README (replace create-next-app stub)
-- [ ] `ARCHITECTURE.md`, `SECURITY.md`, `CONTRIBUTING.md` at repo root
+- [x] **Proper README** (replace create-next-app stub — done pre-v0.4)
+- [x] **`SECURITY.md`** — responsible disclosure, scope table, key constraints (v0.4.10)
+- [x] **`CONTRIBUTING.md`** — dev setup, code style, changelog requirement, platform-addition guide (v0.4.10)
+- [x] **`ARCHITECTURE.md`** — system design doc: directory layout, data model, adapter interfaces, deployment (v0.4.13)
 
 ### Acceptance Gate (v0.4)
 - `npx tsc --noEmit` passes with zero errors
@@ -122,9 +124,9 @@ These live in the `love-button` repo but are user-facing improvements to the ext
 
 | # | Item | Why it matters |
 |---|------|---------------|
-| E1 | **Popup: handle suggestions on "not found"** — when a lookup returns 404, show "Try @{variant}" suggestions (strip leading `@`, lowercase, strip spaces) | Reduces dead ends for users who searched with wrong casing or symbol |
-| E2 | **Popup: "Share this creator" button** — copies `https://redd.love/@{handle}` to clipboard from within the popup result | Creators want their audience to spread the tip page; currently requires opening a browser tab |
-| E3 | **Popup: keyboard navigation** — arrow keys cycle history entries; Escape clears; Enter from history re-triggers lookup | Accessibility gap; power users expect keyboard flow throughout |
+| E1 | ✅ **Popup: handle suggestions on "not found"** — `fetchSuggestions()` calls `/api/search`; "Did you mean?" chips with clickable handles | Done love-button v2.6 |
+| E2 | ✅ **Popup: "Share this creator" button** — copies `{apiBase}/{handle}` to clipboard with green flash feedback | Done love-button v2.6 |
+| E3 | ✅ **Popup: keyboard navigation** — ArrowDown/Up cycle history; Escape returns focus to search; Enter/Space activates | Done love-button v2.6 |
 | E4 | **Extension: "Tip me" embed badge generator** — popup result page shows a copyable HTML `<a href="redd.love/@handle"><img ...></a>` badge snippet for creator websites | Drives organic discovery; creator puts badge in blog/docs/footer |
 | E5 | **Content scripts: RDD address detection** — scan page text for `R[A-Za-z0-9]{33}` / `rdd1[a-z0-9]{39}` patterns; offer a "Look up this address on ReddID" context menu option | Many creators share raw addresses; this bridges the gap until they register |
 | E6 | **Extension: configurable tip URL target** — settings option to open `redd.love/@handle` vs `redd.love/pay/@handle` when clicking the in-page tip button | /pay is more focused for payers; let extension users choose |
@@ -344,3 +346,11 @@ Ordered by dependency. Do not skip steps.
 | v0.3 | 2026-05-25 | Platform expansion, Love Button v2.4, platforms page, search API |
 | v0.4.0 | 2026-05-25 | Foundation refactor — types, DataStore, wallets, agents, payment intents; platforms.ts; /platforms page; /api/search |
 | v0.4.1 | 2026-05-25 | /privacy + /terms pages; /pay/[handle] BIP21 payment page; register social accounts (13 platforms); API socialLinks[] |
+| v0.4.5 | 2026-05-25 | NavBar quick-lookup; /guide user guide; CI npm build check; exploration+edit UX polish |
+| v0.4.7 | 2026-05-25 | /search client page; CardClientButtons (QR download + server-component fix); homepage recent registrations; /not-found fix |
+| v0.4.8 | 2026-05-25 | Profile completion indicator (7-step progress bar + chips) on edit page |
+| v0.4.9 | 2026-05-25 | Explore page load-more pagination (20/page, "Load more · N remaining" button) |
+| v0.4.10 | 2026-05-25 | SECURITY.md + CONTRIBUTING.md added to repo root |
+| v0.4.11 | 2026-05-25 | config.ts env-var centralisation; .env.example; NEXT_PUBLIC_ prefix fix; .gitignore .env.example negation |
+| v0.4.12 | 2026-05-25 | PWA icons (192/512 PNG) generated from brand SVG; scripts/generate-icons.js; sharp devDependency |
+| v0.4.13 | 2026-05-25 | ARCHITECTURE.md; ROADMAP stale items fixed; love-button v2.6 E1/E2/E3 marked done |

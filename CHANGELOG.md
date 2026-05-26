@@ -17,6 +17,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.13] — 2026-05-25
+
+### Added
+- **`ARCHITECTURE.md`** — comprehensive system design document: design principles, annotated directory layout, data model overview (Identity v1/v2, WalletLink, SocialProof, AgentIdentity, PaymentIntent, PublicIdentity), DataStore layer (interface, JsonFileDataStore, SQLite upgrade path), full Provider/Adapter table (12 providers, mock vs future real), API route reference table, page route table, Client vs Server component patterns (Suspense wrapper, client-button extraction), environment variable reference, deployment guide (dev + Railway), and future integration points (Gajumaru rail, platform API verification, wallet signature verification, SQLite)
+
+### Changed
+- **`docs/ROADMAP.md`** — stale items corrected: user guide page, README, SECURITY.md, CONTRIBUTING.md all marked ✅; E1/E2/E3 marked ✅ (love-button v2.6); ARCHITECTURE.md marked ✅; version history extended through v0.4.13; last-updated bumped to v0.4.12
+
+---
+
 ## [0.4.12] — 2026-05-25
 
 ### Added
