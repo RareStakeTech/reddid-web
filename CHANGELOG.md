@@ -17,6 +17,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.19] — 2026-05-26
+
+### Changed
+- **`src/app/reserve/page.tsx`** — grey "Not Live" banner upgraded to prominent amber "⚠ DEMO DATA — Reserve Not Live" panel with explicit "No funds are held. No bridge exists yet." wording; above-fold visibility confirmed (Sprint 0 / ISSUE-005)
+- **`src/app/staking/page.tsx`** — "Estimate Only" blue banner replaced with amber "⚠ Educational estimate only — not financial advice" panel including PoSV variance warning and "consult a qualified financial adviser" language (Sprint 0 / ISSUE-013)
+- **`src/components/TrustBadge.tsx`** — `challenge-post-verified` tooltip reworded from "Verified via a public challenge post on the linked platform" to full trust-based disclaimer: proof URL is stored on record but not independently fetched in v0.4; platform API verification in v0.5 (Sprint 0 / ISSUE-006 partial)
+- **`docs/VALIDATION_LOG.md`** — Sprint 0 UX Walkthrough section added; 19/19 checkpoints passed; all findings documented with pass/fail; 3 fixes applied
+
+### Sprint 0 Walkthrough Results (2026-05-26)
+All 19 server-side API and SSR checkpoints passed:
+- Handle registration, duplicate rejection, tip page, challenge/confirm flow, social proof display all functional
+- publicIdentity() correctly strips editToken and verificationChallenges from all public endpoints
+- Reserve/bridge/staking pages carry honest disclaimers visible above fold
+- Not-found page has proper navigation (Register this handle / Browse creators / Search directory)
+- OG image API returns HTTP 200 image/png
+- Rate limiting working (3 registrations/IP/hour, 429 with Retry-After header)
+
+---
+
 ## [0.4.18] — 2026-05-26
 
 ### Added
