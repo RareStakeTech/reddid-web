@@ -85,8 +85,8 @@ This roadmap reflects the current implementation plan. It is a working document 
 
 | # | Item | Affected file(s) | Why it matters |
 |---|------|-----------------|---------------|
-| U1 | **Custom 404 page** — branded `not-found.tsx` with handle search suggestion and links to /register and /explore | `src/app/not-found.tsx` | Next.js default 404 is completely off-brand; currently shows on every unregistered handle |
-| U2 | **Error boundary page** — branded `error.tsx` with reload button | `src/app/error.tsx` | Unhandled Next.js errors currently show a white crash screen |
+| U1 | ✅ **Custom 404 page** — branded `not-found.tsx` with handle search suggestion and links to /register and /explore | `src/app/not-found.tsx` | Done v0.4.2 |
+| U2 | ✅ **Error boundary page** — branded `error.tsx` with reload button | `src/app/error.tsx` | Done v0.4.2 |
 | U3 | **`robots.txt`** — allow all, disallow `/api/`, point to sitemap | `public/robots.txt` | Missing; Google treats all paths as uncrawlable by default |
 | U4 | **`sitemap.ts`** — dynamic Next.js route handler; includes static pages + all registered handle pages from `getAllIdentities()` | `src/app/sitemap.ts` | Google can't discover `/@handle` pages without this |
 | U5 | **Tip page: social proof badges → hyperlinks** — wrap each PlatformBadge in `<a href={platformProfileUrl(platform, username)}>` | `src/app/[handle]/page.tsx` | Badges show username but aren't clickable; users expect to be able to click through to the profile |
@@ -115,6 +115,55 @@ This roadmap reflects the current implementation plan. It is a working document 
 | U18 | **`/explore` load-more / pagination** — "Load more" button after 20 results instead of rendering all at once | `src/app/explore/page.tsx` | Will matter as the directory grows; prevents long initial render |
 | U19 | **Homepage — recent registrations widget** — a horizontal scroll row showing the last 5 registered handles (avatar placeholder, handle, platform count) fetched from `/api/explore` | `src/app/page.tsx` | Makes the homepage feel alive; social proof that people are using the service |
 | U20 | **`/card/[handle]` — QR download** — "Download card as image" using `html-to-image` or canvas; downloads a PNG of the full tip card | `src/app/card/[handle]/page.tsx` | Very useful for creators putting their tip card in social media bios, stream overlays, video descriptions |
+
+### Extension-side UX (Love Button v2.6 targets)
+
+These live in the `love-button` repo but are user-facing improvements to the extension experience.
+
+| # | Item | Why it matters |
+|---|------|---------------|
+| E1 | **Popup: handle suggestions on "not found"** — when a lookup returns 404, show "Try @{variant}" suggestions (strip leading `@`, lowercase, strip spaces) | Reduces dead ends for users who searched with wrong casing or symbol |
+| E2 | **Popup: "Share this creator" button** — copies `https://redd.love/@{handle}` to clipboard from within the popup result | Creators want their audience to spread the tip page; currently requires opening a browser tab |
+| E3 | **Popup: keyboard navigation** — arrow keys cycle history entries; Escape clears; Enter from history re-triggers lookup | Accessibility gap; power users expect keyboard flow throughout |
+| E4 | **Extension: "Tip me" embed badge generator** — popup result page shows a copyable HTML `<a href="redd.love/@handle"><img ...></a>` badge snippet for creator websites | Drives organic discovery; creator puts badge in blog/docs/footer |
+| E5 | **Content scripts: RDD address detection** — scan page text for `R[A-Za-z0-9]{33}` / `rdd1[a-z0-9]{39}` patterns; offer a "Look up this address on ReddID" context menu option | Many creators share raw addresses; this bridges the gap until they register |
+| E6 | **Extension: configurable tip URL target** — settings option to open `redd.love/@handle` vs `redd.love/pay/@handle` when clicking the in-page tip button | /pay is more focused for payers; let extension users choose |
+| E7 | **Extension popup: show social proof badges** — display each linked platform with 🔗/○ badge inline with the identity result | Currently only shows address and balance tabs; social proof shown but could be richer |
+
+### Deployment & Production Readiness
+
+These are not features but are required before any public launch announcement.
+
+| # | Item | Priority |
+|---|------|---------|
+| D1 | **Railway deployment with persistent volume** — mount `/app/data` as a persistent volume; set `PORT` env; confirm `data/db.json` survives redeploys | **Blocker** — current Vercel/serverless deploy will wipe db.json on every deploy |
+| D2 | **SqliteDataStore implementing DataStore interface** — swap `JsonFileDataStore` for SQLite via `better-sqlite3`; no route changes (all routes go through `getStore()`); migration script from db.json | **Blocker for scale** — flat JSON has no atomic writes; risk of corruption under concurrent requests |
+| D3 | **Environment variable config** — `REDDID_API_BASE`, `REDDID_BLOCKBOOK_URL`, `REDDID_DB_PATH`, `NODE_ENV`; validate at startup | Required for Railway; avoids hardcoded paths |
+| D4 | **Proper README** — replace create-next-app stub with project overview, install steps, env vars, API reference, dev/prod run instructions | Required for contributors and store reviewers who inspect source |
+| D5 | **`SECURITY.md`** — responsible disclosure address, scope, out-of-scope (no bug bounty yet), contact | Good-faith security disclosure path |
+| D6 | **`CONTRIBUTING.md`** — how to add a platform, how to open a PR, code style, changelog requirement | Required before accepting community PRs |
+| D7 | **CI: add `npm run build` check** — GitHub Actions currently runs `tsc --noEmit` and lint; add a full Next.js build step to catch RSC/bundler errors that tsc misses | Prevents shipping broken builds |
+| D8 | **Rate limiting hardening** — current in-memory rate limiter resets on server restart; replace with file-backed or SQLite-backed counters | Required before public launch to prevent registration spam |
+
+### Chrome Web Store / Firefox AMO Submission Checklist
+
+| # | Item | Status |
+|---|------|--------|
+| S1 | /privacy page live at redd.love/privacy | ✅ Done (v0.4.1) |
+| S2 | /terms page live at redd.love/terms | ✅ Done (v0.4.1) |
+| S3 | store/listing.md written for v2.5 | ✅ Done (v2.5.1) |
+| S4 | Permission justifications in listing.md | ✅ Done (v2.5.1) |
+| S5 | `npm run build:chrome` produces clean zip | ✅ Done (v2.5.0) |
+| S6 | `npm run build:firefox` produces valid folder | ✅ Done (v2.5.0) |
+| S7 | `web-ext lint` 0 errors | Needs verification |
+| S8 | Screenshots captured (store/screenshots.md spec) | ❌ Not done |
+| S9 | 1280×800 promotional tile created | ❌ Not done |
+| S10 | All 14 TESTING.md sections passed on Chrome latest | ❌ Not done |
+| S11 | All 14 TESTING.md sections passed on Firefox latest | ❌ Not done |
+| S12 | All 14 TESTING.md sections passed on Firefox ESR | ❌ Not done |
+| S13 | Chrome Web Store developer account confirmed | ❌ Needs check |
+| S14 | Firefox AMO developer account confirmed | ❌ Needs check |
+| S15 | Source code zip uploaded to AMO (required for MV3) | ❌ Not done |
 
 ---
 

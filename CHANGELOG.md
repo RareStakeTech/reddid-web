@@ -18,6 +18,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.2] — 2026-05-25
+
+### Added
+- **`src/app/not-found.tsx`** (U1) — branded Next.js 404 page; large Ɍ symbol, "Handle not found" heading, explanation that the handle is not yet registered, "Register this handle" CTA (→ /register), "Browse creators" CTA (→ /explore), and "Search the ReddID directory →" footer link; replaces the off-brand Next.js default 404 that was shown on every unregistered `/@handle` visit
+- **`src/app/error.tsx`** (U2) — branded global error boundary (`'use client'`); logs error to console via `useEffect`; shows ⚠ symbol, "Something went wrong" heading, non-custodial reassurance ("No funds or data have been affected"), optional `error.digest` reference for support escalation, "Try again" button (calls `reset()`) and "Go home" link; replaces the plain white Next.js crash screen
+
+---
+
 ## [0.4.1] — 2026-05-25
 
 ### Added
