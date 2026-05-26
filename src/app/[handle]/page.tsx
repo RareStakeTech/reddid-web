@@ -125,6 +125,9 @@ export default async function TipPage({ params, searchParams }: Props) {
   if (!identity) notFound();
 
   const displayName = identity.displayName ?? `@${identity.handle}`;
+  // U15: show verify CTA when no social proofs or all are self-reported
+  const hasVerifiedProof = identity.socialProofs.some(p => p.verificationStatus === 'verified');
+  const showVerifyCta = !hasVerifiedProof;
   const joinedDate = new Date(identity.createdAt).toLocaleDateString('en-US', {
     year: 'numeric', month: 'long',
   });
@@ -414,6 +417,45 @@ export default async function TipPage({ params, searchParams }: Props) {
           </div>
         </div>
 
+        {/* U15 — Verify CTA: show when no proofs are independently verified */}
+        {showVerifyCta && (
+          <div
+            style={{
+              padding: '13px 32px',
+              borderBottom: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+              background: 'rgba(227,6,19,0.03)',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {identity.socialProofs.length === 0
+                  ? 'Is this your tip page? Link your social accounts so fans can find you.'
+                  : 'Your linked accounts are self-reported — verify them to earn the ✓ badge.'}
+              </span>
+            </div>
+            <Link
+              href={`/verify?handle=${identity.handle}`}
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                fontFamily: "'Rubik', sans-serif",
+                color: 'var(--redd-red)',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                borderBottom: '1px solid rgba(227,6,19,0.35)',
+                paddingBottom: 1,
+              }}
+            >
+              Verify accounts →
+            </Link>
+          </div>
+        )}
+
         {/* Card footer */}
         <div
           style={{
@@ -435,6 +477,7 @@ export default async function TipPage({ params, searchParams }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <ShareButton url={pageUrl} title={`Tip @${identity.handle} with Ɍ RDD`} />
+            <CopyButton text={pageUrl} label="Copy URL" />
             <Link
               href={`/pay/${identity.handle}`}
               style={{ fontSize: '0.75rem', color: 'var(--redd-red-light)', textDecoration: 'none', fontFamily: "'Rubik', sans-serif", fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}

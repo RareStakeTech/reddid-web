@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import QuickLookup from '@/components/QuickLookup';
 import Image from 'next/image';
-import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X, ArrowLeftRight, Users, Zap, Layers } from 'lucide-react';
+import { Home, PenLine, Map, BarChart2, BookOpen, Menu, X, ArrowLeftRight, Users, Zap, Layers, HelpCircle } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/',          label: 'Home',      Icon: Home },
   { href: '/register',  label: 'Register',  Icon: PenLine },
   { href: '/explore',   label: 'Explore',   Icon: Users },
   { href: '/platforms', label: 'Platforms', Icon: Layers },
+  { href: '/guide',     label: 'Guide',     Icon: HelpCircle },
   { href: '/bridge',    label: 'Bridge',    Icon: ArrowLeftRight },
   { href: '/staking',   label: 'Staking',   Icon: Zap },
   { href: '/roadmap',   label: 'Roadmap',   Icon: Map },
@@ -106,6 +108,11 @@ export default function NavBar() {
               </Link>
             );
           })}
+        </div>
+
+        {/* Quick handle lookup — desktop only */}
+        <div className="hidden-mobile" style={{ marginLeft: 8 }}>
+          <QuickLookup />
         </div>
 
         {/* Mobile hamburger */}

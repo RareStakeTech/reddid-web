@@ -94,17 +94,17 @@ This roadmap reflects the current implementation plan. It is a working document 
 | U7 | ✅ **`/explore` empty search state** — when filtered results = 0, show encouraging message and "clear search" button instead of blank space | `src/app/explore/page.tsx` | Done v0.4.3 |
 | U8 | ✅ **`/explore` result count** — show "Showing N of M creators" above the grid | `src/app/explore/page.tsx` | Done v0.4.3 |
 
-### Tier 2 — 1–2 hours each
+### Tier 2 — 1–2 hours each (started v0.4.5)
 
 | # | Item | Affected file(s) | Why it matters |
 |---|------|-----------------|---------------|
-| U9 | **NavBar quick-lookup** — add an inline search input that navigates to `/@{handle}` on Enter; falls back to `/explore?q=` if not found | `src/components/NavBar.tsx` | The most common action (find a creator) requires going to /explore first |
-| U10 | **`/guide` user guide page** — step-by-step getting-started for new users: (1) install Love Button, (2) register handle, (3) link social accounts, (4) share your tip page | `src/app/guide/page.tsx` | Reduces friction for new users; store reviewers expect a help/guide page |
+| U9 | ✅ **NavBar quick-lookup** — add an inline search input that navigates to `/@{handle}` on Enter; falls back to `/explore?q=` if not found | `src/components/NavBar.tsx` | The most common action (find a creator) requires going to /explore first |
+| U10 | ✅ **`/guide` user guide page** — step-by-step getting-started for new users: (1) install Love Button, (2) register handle, (3) link social accounts, (4) share your tip page | `src/app/guide/page.tsx` | Reduces friction for new users; store reviewers expect a help/guide page |
 | U11 | **`/verify` → `/edit` social links management** — add a "Social Accounts" section to the edit page that shows current social proofs (platform + username + status) with a "Verify →" link per platform and an "Add account" button linking to `/verify?handle={handle}` | `src/app/edit/[handle]/page.tsx` | Currently the edit page has no social proof management; you can only add them at registration or via the raw /verify flow |
 | U12 | **`/pay/[handle]` QR image download** — "Save QR" button that uses canvas `toDataURL()` to export the QR as a PNG | `src/app/pay/[handle]/PayClient.tsx` | Useful for putting QR code in videos, stream overlays, invoices |
-| U13 | **`/explore` loading skeleton** — replace the "Loading…" spinner with 6 placeholder card skeletons during initial fetch | `src/app/explore/page.tsx` | Reduces layout shift; looks more polished |
-| U14 | **Tip page: "Copy tip page URL" button** — quick copy of `https://redd.love/@{handle}` alongside Share button | `src/app/[handle]/page.tsx` | Shareable URL is not directly copyable without using the browser address bar or ShareButton |
-| U15 | **`/verify` → deep-link from tip page** — add "Is this your tip page? Verify your social accounts →" link visible when NO social proofs are recorded, or when proofs exist but are all `self-reported` | `src/app/[handle]/page.tsx` | Discoverability gap: creators who just registered don't know to go to /verify |
+| U13 | ✅ **`/explore` loading skeleton** — replace the "Loading…" spinner with 6 placeholder card skeletons during initial fetch | `src/app/explore/page.tsx` | Reduces layout shift; looks more polished |
+| U14 | ✅ **Tip page: "Copy tip page URL" button** — quick copy of `https://redd.love/@{handle}` alongside Share button | `src/app/[handle]/page.tsx` | Shareable URL is not directly copyable without using the browser address bar or ShareButton |
+| U15 | ✅ **`/verify` → deep-link from tip page** — add "Is this your tip page? Verify your social accounts →" link visible when NO social proofs are recorded, or when proofs exist but are all `self-reported` | `src/app/[handle]/page.tsx` | Discoverability gap: creators who just registered don't know to go to /verify |
 
 ### Tier 3 — Half day each
 

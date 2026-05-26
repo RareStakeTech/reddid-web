@@ -18,6 +18,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.5] — 2026-05-26
+
+### Added
+- **CI: upgraded to Node.js 24** (`.github/workflows/ci.yml`) — Node.js 20 actions are deprecated; GitHub will force Node 24 on runners from June 2nd 2026; updated both `build` and `lint` jobs
+- **`/guide` page** (U10) — 5-step getting-started guide: (1) register handle, (2) verify social accounts, (3) share your tip page, (4) install Love Button extension, (5) maintain profile; includes 5-item FAQ; three CTAs at bottom (Register, Browse, reddcoin.com); linked from NavBar (Guide, HelpCircle icon) and layout footer
+- **`src/components/QuickLookup.tsx`** (U9) — NavBar quick-lookup input; `@handle` search field (140→180px animated width on focus); Enter/submit navigates to `/@handle` (strips leading `@`, lowercases); displayed on desktop only via `hidden-mobile` class; uses `useRouter` for client-side nav
+
+### Changed
+- **NavBar** (U9) — `QuickLookup` added to the right of the desktop nav links; `Guide` link added to `NAV_LINKS` with `HelpCircle` icon
+- **`layout.tsx` footer** — Guide link added before Architecture
+- **`[handle]/page.tsx`** (U14) — "Copy URL" (`CopyButton text={pageUrl}`) added to card footer alongside ShareButton — one-click copy of the tip page URL
+- **`[handle]/page.tsx`** (U15) — Verify CTA strip added above card footer; shown when no social proofs are independently verified (`verificationStatus !== 'verified'`); contextual message ("link your social accounts" if none / "verify them for ✓ badge" if self-reported); links to `/verify?handle={handle}`
+- **`explore/page.tsx`** (U13) — loading spinner replaced with 6-card animated skeleton grid matching real card layout (handle, name, 2 bio lines, platform badges, date); staggered pulse animation (0.1s delay per card)
+- **`globals.css`** — added `@keyframes pulse` for skeleton cards
+
+---
+
 ## [0.4.4] — 2026-05-25
 
 ### Fixed

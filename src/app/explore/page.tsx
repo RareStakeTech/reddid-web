@@ -148,9 +148,43 @@ export default function ExplorePage() {
         </div>
       )}
 
-      {/* Grid */}
+      {/* U13 — Grid or skeleton */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-dim)' }}>Loading creators…</div>
+        /* 6-card skeleton grid that matches the real card layout */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                animation: 'pulse 1.6s ease-in-out infinite',
+                animationDelay: `${i * 0.1}s`,
+              }}
+            >
+              {/* handle placeholder */}
+              <div style={{ height: 12, width: '45%', background: 'var(--border)', borderRadius: 4 }} />
+              {/* name placeholder */}
+              <div style={{ height: 18, width: '70%', background: 'var(--border)', borderRadius: 4 }} />
+              {/* bio lines */}
+              <div style={{ height: 10, width: '100%', background: 'var(--border)', borderRadius: 4 }} />
+              <div style={{ height: 10, width: '80%', background: 'var(--border)', borderRadius: 4 }} />
+              {/* footer row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ height: 18, width: 24, background: 'var(--border)', borderRadius: 3 }} />
+                  <div style={{ height: 18, width: 24, background: 'var(--border)', borderRadius: 3 }} />
+                </div>
+                <div style={{ height: 10, width: 40, background: 'var(--border)', borderRadius: 4 }} />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           {/* U7 — branded empty state */}

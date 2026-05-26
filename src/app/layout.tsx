@@ -61,6 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             reddcoin.com
           </a>
           <span> · Ɍ Native RDD is always the root · </span>
+          <a href="/guide" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
+            Guide
+          </a>
+          <span> · </span>
           <a href="/docs" style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
             Architecture
           </a>
