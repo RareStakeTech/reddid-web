@@ -1,18 +1,22 @@
 /**
- * rate-limit.ts — in-memory rate limiter for server-side API routes.
+ * rate-limit.ts — rate limiter for server-side API routes.
  *
- * This is a single-process, in-memory implementation. It is NOT safe for
- * multi-process deployments (multiple Next.js workers, serverless, etc.).
+ * Automatically selects the appropriate backend based on REDDID_DB_ENGINE:
+ *   'sqlite' → SqliteDataStore.checkRateLimit() — persists across restarts (S4-06)
+ *   'json'   → in-memory Map — resets on server restart (acceptable for local dev)
  *
- * Swap for Redis/Upstash rate limiting in production:
- *   - https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
- *   - Replace the `_store` Map with Redis INCR + EXPIRE calls
- *   - Drop-in replacement: same check() signature
+ * All callers use the same checkRateLimit() function — no changes at call sites.
+ *
+ * Future: for multi-instance Railway deployments, swap for Redis/Upstash:
+ *   https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
  *
  * Usage:
- *   const result = rateLimiter.check(ip, 'register', { limit: 5, windowMs: 60_000 });
+ *   const result = checkRateLimit(ip, 'register', RATE_LIMITS.register);
  *   if (!result.ok) return Response.json({ error: 'Too many requests.' }, { status: 429 });
  */
+
+import { DB_ENGINE } from './config';
+import { getStore, SqliteDataStore } from './store';
 
 export interface RateLimitOptions {
   /** Max requests allowed in the window */
@@ -30,16 +34,43 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
+// ── In-memory fallback (used when REDDID_DB_ENGINE=json) ─────────────────────
+
 interface Bucket {
   count: number;
   windowStart: number;
 }
 
-// In-memory store: keyed by `${ip}:${action}`
-const _store = new Map<string, Bucket>();
+const _memStore = new Map<string, Bucket>();
+
+function checkRateLimitMemory(
+  identifier: string,
+  action: string,
+  limit: number,
+  windowMs: number,
+): RateLimitResult {
+  const key = `${identifier}:${action}`;
+  const now = Date.now();
+
+  let bucket = _memStore.get(key);
+  if (!bucket || now - bucket.windowStart >= windowMs) {
+    bucket = { count: 0, windowStart: now };
+  }
+  bucket.count += 1;
+  _memStore.set(key, bucket);
+
+  return {
+    ok: bucket.count <= limit,
+    remaining: Math.max(0, limit - bucket.count),
+    resetAt: bucket.windowStart + windowMs,
+  };
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 /**
  * Check and increment a rate limit counter.
+ * Delegates to SQLite (persistent) or in-memory Map depending on REDDID_DB_ENGINE.
  *
  * @param identifier  Client identifier — typically IP address or handle
  * @param action      Namespaced action key (e.g. 'register', 'verify-challenge')
@@ -50,28 +81,16 @@ export function checkRateLimit(
   action: string,
   options: RateLimitOptions,
 ): RateLimitResult {
-  const key = `${identifier}:${action}`;
-  const now = Date.now();
   const { limit, windowMs } = options;
 
-  let bucket = _store.get(key);
-
-  // If bucket doesn't exist or window has expired, start fresh
-  if (!bucket || now - bucket.windowStart >= windowMs) {
-    bucket = { count: 0, windowStart: now };
+  if (DB_ENGINE === 'sqlite') {
+    // SQLite-backed: persists across restarts. S4-06.
+    const sqliteStore = getStore() as SqliteDataStore;
+    return sqliteStore.checkRateLimit(identifier, action, limit, windowMs);
   }
 
-  bucket.count += 1;
-  _store.set(key, bucket);
-
-  const resetAt = bucket.windowStart + windowMs;
-  const remaining = Math.max(0, limit - bucket.count);
-
-  return {
-    ok: bucket.count <= limit,
-    remaining,
-    resetAt,
-  };
+  // In-memory fallback
+  return checkRateLimitMemory(identifier, action, limit, windowMs);
 }
 
 // ── Preset rate limits ────────────────────────────────────────────────────────

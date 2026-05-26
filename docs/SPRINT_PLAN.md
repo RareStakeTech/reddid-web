@@ -179,7 +179,7 @@
 | S4-03 | Atomic writes + WAL mode | sqlite-store.ts | Part of S4-01 — WAL mode + transactions on all writes | ✅ DONE v0.4.27 |
 | S4-04 | Railway deployment | railway.toml | Live at redd.love; persistent volume at /app/data; zero-downtime deploys | [ ] |
 | S4-05 | Environment variable management | src/lib/config.ts, .env.example | All required vars documented; REDDID_DB_ENGINE, ADMIN_SECRET, DB_PATH confirmed | ✅ DONE v0.4.26 |
-| S4-06 | Rate limiting (SQLite-backed) | src/lib/rate-limit.ts | rate_limit_counters table; persists across restarts; per-IP and per-handle | [ ] |
+| S4-06 | Rate limiting (SQLite-backed) | src/lib/rate-limit.ts, sqlite-store.ts | rate_limit_counters table; persists across restarts; per-IP and per-handle | ✅ DONE v0.4.28 |
 | S4-07 | HTTPS enforcement | next.config.ts | Redirect all HTTP → HTTPS via x-forwarded-proto check | ✅ DONE v0.4.26 |
 | S4-08 | Security headers (CSP, HSTS, X-Frame-Options) | next.config.ts | HSTS + CSP + X-Frame-Options + Referrer-Policy + Permissions-Policy applied | ✅ DONE v0.4.26 |
 | S4-09 | CI pipeline (GitHub Actions) | .github/workflows/ci.yml | ✅ Already live — tsc, lint, build on every push. Add test step in Sprint 5. | ✅ EXISTS |

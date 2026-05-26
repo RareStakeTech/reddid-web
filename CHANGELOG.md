@@ -16,6 +16,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.28] — 2026-05-26 — Sprint 4: S4-06 SQLite-backed rate limiting
+
+### Changed (S4-06 — persistent rate limiting)
+- `src/lib/store/sqlite-store.ts` — `checkRateLimit()` return type updated: now returns `{ ok, remaining, resetAt }` matching `RateLimitResult` (previously returned `boolean`)
+- `src/lib/rate-limit.ts` — Rewired to automatically select backend based on `REDDID_DB_ENGINE`:
+  - `'sqlite'` → delegates to `SqliteDataStore.checkRateLimit()` — persists across server restarts; counts survive Railway redeployments
+  - `'json'` → existing in-memory Map behavior (no change for local dev)
+  - No call-site changes — all API routes continue to call `checkRateLimit(ip, action, RATE_LIMITS.xxx)` unchanged
+  - `RATE_LIMITS` presets unchanged (register: 3/hr, verifyChallenge: 10/10min, report: 5/hr, recover: 5/hr, etc.)
+  - Future multi-instance upgrade path documented (Redis/Upstash when needed)
+
+### Build results (v0.4.28)
+- `tsc --noEmit` → exit 0 ✅
+- `npm run lint` → exit 0 ✅
+- `npm run build` → exit 0, 26 static pages ✅
+
+---
+
 ## [0.4.27] — 2026-05-26 — Sprint 4: S4-01+02+03 SQLite store + migration
 
 ### Added (S4-01 + S4-03 — SqliteDataStore with WAL mode)

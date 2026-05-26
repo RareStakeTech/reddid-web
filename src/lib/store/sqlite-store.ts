@@ -785,41 +785,52 @@ export class SqliteDataStore implements DataStore {
 
   /**
    * Check and increment a rate limit counter.
-   * Returns true if the action is allowed (under limit), false if blocked.
+   * Returns { ok, remaining, resetAt } — compatible with RateLimitResult in rate-limit.ts.
    *
    * @param identifier - IP address or handle
    * @param action     - e.g. 'register', 'challenge', 'recover'
    * @param limit      - max allowed count per window
-   * @param windowSecs - window duration in seconds
+   * @param windowMs   - window duration in milliseconds (matches rate-limit.ts convention)
    */
   checkRateLimit(
     identifier: string,
     action: string,
     limit: number,
-    windowSecs: number,
-  ): boolean {
-    const now = Math.floor(Date.now() / 1000);
-    const windowStart = now - windowSecs;
+    windowMs: number,
+  ): { ok: boolean; remaining: number; resetAt: number } {
+    const nowMs = Date.now();
+    const nowSecs = Math.floor(nowMs / 1000);
+    const windowSecs = Math.floor(windowMs / 1000);
+    const windowStart = nowSecs - windowSecs;
 
     const row = this.db
       .prepare('SELECT count, window_start FROM rate_limit_counters WHERE identifier = ? AND action = ?')
       .get(identifier, action) as { count: number; window_start: number } | undefined;
 
+    let currentCount: number;
+
     if (!row || row.window_start < windowStart) {
-      // No record or window has expired — reset
+      // No record or window has expired — start fresh at count=1
       this.db.prepare(`
         INSERT INTO rate_limit_counters (identifier, action, count, window_start)
         VALUES (?, ?, 1, ?)
         ON CONFLICT(identifier, action) DO UPDATE SET count = 1, window_start = excluded.window_start
-      `).run(identifier, action, now);
-      return true;
+      `).run(identifier, action, nowSecs);
+      currentCount = 1;
+    } else {
+      currentCount = row.count + 1;
+      this.db.prepare(
+        'UPDATE rate_limit_counters SET count = count + 1 WHERE identifier = ? AND action = ?'
+      ).run(identifier, action);
     }
 
-    if (row.count >= limit) return false;
+    const windowStartMs = (row && row.window_start >= windowStart ? row.window_start : nowSecs) * 1000;
+    const resetAt = windowStartMs + windowMs;
 
-    this.db.prepare(
-      'UPDATE rate_limit_counters SET count = count + 1 WHERE identifier = ? AND action = ?'
-    ).run(identifier, action);
-    return true;
+    return {
+      ok: currentCount <= limit,
+      remaining: Math.max(0, limit - currentCount),
+      resetAt,
+    };
   }
 }
