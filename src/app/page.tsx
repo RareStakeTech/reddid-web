@@ -30,27 +30,27 @@ const FEATURES = [
   {
     Icon: AtSign,
     title: 'Human-readable @handles',
-    desc: 'Register @yourname and share a clean tip URL instead of a raw Ɍ RDD address.',
+    desc: 'Register @yourname and share a clean tip URL. Anyone can send Ɍ RDD to your name — no long addresses, no friction.',
   },
   {
     Icon: Zap,
-    title: 'Instant tip pages',
-    desc: 'redd.love/@yourname — a public page with your RDD address and scannable BIP21 QR code, ready for anyone to tip.',
+    title: 'Instant tip pages + payment QR',
+    desc: 'redd.love/@yourname — a public tip page with your RDD address, a BIP21 QR code, and a focused /pay page for payers.',
   },
   {
     Icon: Link2,
-    title: 'Social proofs — coming v0.2',
-    desc: 'Link your Twitter, GitHub, Reddit — cryptographically provable, no KYC required.',
+    title: 'Social identity across 13 platforms',
+    desc: 'Link Twitter, YouTube, GitHub, Twitch, Bluesky, and 8 more. The Love Button browser extension surfaces a tip button next to Follow on every one.',
   },
   {
     Icon: Bot,
-    title: 'Agent delegation — coming v0.3',
-    desc: 'Authorize AI agents and bots to tip on your behalf — with strict limits, explicit disclosure, and instant revocation.',
+    title: 'Agent delegation — v0.4 types, UI coming',
+    desc: 'Authorize AI agents and bots to tip on your behalf — with strict per-tx limits, required public disclosure, and instant revocation.',
   },
   {
     Icon: Scale,
     title: 'Transparent reserve model',
-    desc: 'When ReddRail launches, all represented Ɍ RDD will be backed by native RDD in publicly auditable reserve wallets.',
+    desc: 'When ReddRail launches, all represented Ɍ RDD will be backed by native RDD in publicly auditable reserve wallets. Non-custodial by design.',
   },
 ];
 
@@ -77,7 +77,7 @@ export default async function HomePage() {
               textTransform: 'uppercase',
             }}
           >
-            v0.3 Public Beta · Native Ɍ RDD only
+            v0.4 beta · Native Ɍ RDD only
           </span>
         </div>
         <h1
@@ -156,9 +156,9 @@ export default async function HomePage() {
       {/* Stats */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 64, flexWrap: 'wrap' }}>
         <StatCard value={identityCount} animateTarget={identityCount} label="Registered @handles" />
-        <StatCard value="v0.3" label="Current version" />
+        <StatCard value="v0.4" label="Current version" />
         <StatCard value="Ɍ Native RDD" label="Root asset" />
-        <StatCard value="Open" label="Registration" />
+        <StatCard value="13" label="Platforms supported" />
       </div>
 
       {/* Features */}
@@ -210,23 +210,25 @@ export default async function HomePage() {
         }}
       >
         <div style={{ fontWeight: 600, fontFamily: "'Rubik', sans-serif", color: '#f0c040', fontSize: '0.85rem', marginBottom: 6 }}>
-          ⚠ Public Beta — v0.1
+          ⚠ Public Beta — v0.4
         </div>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.7, margin: 0 }}>
-          This is an early prototype. In v0.1, handles are registered with format validation only —
-          cryptographic proof of address ownership ships in v0.2. Do not register a handle you cannot
-          reclaim if needed. No payment channels are live yet; tip pages display your Ɍ RDD address for
-          direct wallet-to-wallet tips. ReddRail (high-throughput social-payment channels) will be
-          integrated once Gajumaru Associate Chain tooling is available.
+          Registration is open. Handle registration uses format validation — cryptographic address-ownership
+          proof (wallet signature) ships in v0.5. Do not register a handle you cannot reclaim if needed.
+          Social proof challenge-post flow is live but trust-based; platform API verification comes in v0.5.
+          No payment channels are live yet — tip pages display your Ɍ RDD address for direct wallet-to-wallet tips.
+          ReddRail (high-throughput social-payment channels) integrates once Gajumaru Associate Chain tooling is available.
         </p>
       </div>
 
       {/* Quick links */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {[
-          { href: '/reserve', label: '→ Reserve model' },
-          { href: '/roadmap', label: '→ Build roadmap' },
-          { href: '/docs',    label: '→ Architecture' },
+          { href: '/explore',  label: '→ Explore creators' },
+          { href: '/platforms',label: '→ Supported platforms' },
+          { href: '/reserve',  label: '→ Reserve model' },
+          { href: '/roadmap',  label: '→ Build roadmap' },
+          { href: '/docs',     label: '→ Architecture' },
         ].map(({ href, label }) => (
           <Link
             key={href}

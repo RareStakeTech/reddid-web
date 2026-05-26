@@ -75,6 +75,49 @@ This roadmap reflects the current implementation plan. It is a working document 
 
 ---
 
+## UX Sprint — Easy Wins Backlog
+
+> These are scoped, low-risk improvements that can each be built in a single session.
+> Ordered roughly by user-facing impact. None require new API endpoints.
+> Do these interleaved with v0.4 refactor tasks — each one ships independently.
+
+### Tier 1 — < 1 hour each (do first)
+
+| # | Item | Affected file(s) | Why it matters |
+|---|------|-----------------|---------------|
+| U1 | **Custom 404 page** — branded `not-found.tsx` with handle search suggestion and links to /register and /explore | `src/app/not-found.tsx` | Next.js default 404 is completely off-brand; currently shows on every unregistered handle |
+| U2 | **Error boundary page** — branded `error.tsx` with reload button | `src/app/error.tsx` | Unhandled Next.js errors currently show a white crash screen |
+| U3 | **`robots.txt`** — allow all, disallow `/api/`, point to sitemap | `public/robots.txt` | Missing; Google treats all paths as uncrawlable by default |
+| U4 | **`sitemap.ts`** — dynamic Next.js route handler; includes static pages + all registered handle pages from `getAllIdentities()` | `src/app/sitemap.ts` | Google can't discover `/@handle` pages without this |
+| U5 | **Tip page: social proof badges → hyperlinks** — wrap each PlatformBadge in `<a href={platformProfileUrl(platform, username)}>` | `src/app/[handle]/page.tsx` | Badges show username but aren't clickable; users expect to be able to click through to the profile |
+| U6 | **Post-registration next-step prompt** — in the `?new=1` success banner, add "→ Verify your social accounts" CTA linking to `/verify?handle={handle}` | `src/app/[handle]/page.tsx` | After registering, users don't know what to do next; this closes the loop from register → verify |
+| U7 | **`/explore` empty search state** — when filtered results = 0, show encouraging message and "clear search" button instead of blank space | `src/app/explore/page.tsx` | Current blank state looks like a bug |
+| U8 | **`/explore` result count** — show "Showing N of M creators" above the grid | `src/app/explore/page.tsx` | Helps users understand filter scope |
+
+### Tier 2 — 1–2 hours each
+
+| # | Item | Affected file(s) | Why it matters |
+|---|------|-----------------|---------------|
+| U9 | **NavBar quick-lookup** — add an inline search input that navigates to `/@{handle}` on Enter; falls back to `/explore?q=` if not found | `src/components/NavBar.tsx` | The most common action (find a creator) requires going to /explore first |
+| U10 | **`/guide` user guide page** — step-by-step getting-started for new users: (1) install Love Button, (2) register handle, (3) link social accounts, (4) share your tip page | `src/app/guide/page.tsx` | Reduces friction for new users; store reviewers expect a help/guide page |
+| U11 | **`/verify` → `/edit` social links management** — add a "Social Accounts" section to the edit page that shows current social proofs (platform + username + status) with a "Verify →" link per platform and an "Add account" button linking to `/verify?handle={handle}` | `src/app/edit/[handle]/page.tsx` | Currently the edit page has no social proof management; you can only add them at registration or via the raw /verify flow |
+| U12 | **`/pay/[handle]` QR image download** — "Save QR" button that uses canvas `toDataURL()` to export the QR as a PNG | `src/app/pay/[handle]/PayClient.tsx` | Useful for putting QR code in videos, stream overlays, invoices |
+| U13 | **`/explore` loading skeleton** — replace the "Loading…" spinner with 6 placeholder card skeletons during initial fetch | `src/app/explore/page.tsx` | Reduces layout shift; looks more polished |
+| U14 | **Tip page: "Copy tip page URL" button** — quick copy of `https://redd.love/@{handle}` alongside Share button | `src/app/[handle]/page.tsx` | Shareable URL is not directly copyable without using the browser address bar or ShareButton |
+| U15 | **`/verify` → deep-link from tip page** — add "Is this your tip page? Verify your social accounts →" link visible when NO social proofs are recorded, or when proofs exist but are all `self-reported` | `src/app/[handle]/page.tsx` | Discoverability gap: creators who just registered don't know to go to /verify |
+
+### Tier 3 — Half day each
+
+| # | Item | Affected file(s) | Why it matters |
+|---|------|-----------------|---------------|
+| U16 | **Handle search results page** — `/search?q=` client page using `/api/search`; shows ranked results with handle, name, bio snippet, platform badges | `src/app/search/page.tsx` | Currently /explore does local client-side filter only; /api/search scores across more fields |
+| U17 | **Profile completion indicator** — small progress strip on the edit page showing: handle ✓, RDD address ✓, display name, bio, website, ≥1 social proof, ≥1 verified social proof | `src/app/edit/[handle]/page.tsx` | Guides creators toward a more complete profile without being nagging |
+| U18 | **`/explore` load-more / pagination** — "Load more" button after 20 results instead of rendering all at once | `src/app/explore/page.tsx` | Will matter as the directory grows; prevents long initial render |
+| U19 | **Homepage — recent registrations widget** — a horizontal scroll row showing the last 5 registered handles (avatar placeholder, handle, platform count) fetched from `/api/explore` | `src/app/page.tsx` | Makes the homepage feel alive; social proof that people are using the service |
+| U20 | **`/card/[handle]` — QR download** — "Download card as image" using `html-to-image` or canvas; downloads a PNG of the full tip card | `src/app/card/[handle]/page.tsx` | Very useful for creators putting their tip card in social media bios, stream overlays, video descriptions |
+
+---
+
 ## Milestone: v0.5 — Verification + Analytics
 
 **Target:** Post-v0.4, estimated 2–3 weeks

@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             fontFamily: "'Rubik', sans-serif",
           }}
         >
-          <span>ReddID Next v0.3 beta · </span>
+          <span>ReddID Next v0.4 beta · </span>
           <a
             href="https://www.reddcoin.com"
             target="_blank"

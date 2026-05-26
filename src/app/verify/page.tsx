@@ -5,15 +5,23 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, AlertCircle, Loader2, Copy, Check } from 'lucide-react';
 import { Suspense } from 'react';
+import { LIVE_PLATFORMS } from '@/lib/platforms';
 
+// Derived from the canonical platform registry — stays in sync automatically
 const PLATFORMS: Record<string, { label: string; instruction: string; urlHint: string }> = {
-  twitter:   { label: 'Twitter / X',  instruction: 'Add this code to your Twitter bio, or post it in a tweet.',          urlHint: 'https://twitter.com/yourhandle or tweet URL' },
-  youtube:   { label: 'YouTube',      instruction: 'Add this code to your YouTube channel About section.',                 urlHint: 'https://youtube.com/@yourchannel' },
-  reddit:    { label: 'Reddit',       instruction: 'Add this code to your Reddit profile bio.',                            urlHint: 'https://reddit.com/u/yourname' },
-  instagram: { label: 'Instagram',    instruction: 'Add this code to your Instagram bio.',                                 urlHint: 'https://instagram.com/yourhandle' },
-  twitch:    { label: 'Twitch',       instruction: 'Add this code to your Twitch About / Bio section.',                    urlHint: 'https://twitch.tv/yourhandle' },
-  tiktok:    { label: 'TikTok',       instruction: 'Add this code to your TikTok bio.',                                    urlHint: 'https://tiktok.com/@yourhandle' },
-  github:    { label: 'GitHub',       instruction: 'Add this code to your GitHub profile bio.',                            urlHint: 'https://github.com/yourhandle' },
+  twitter:     { label: 'Twitter / X',          instruction: 'Add this code to your Twitter/X bio, or post it in a tweet.',                                   urlHint: 'https://x.com/yourhandle or tweet URL' },
+  youtube:     { label: 'YouTube',              instruction: 'Add this code to your YouTube channel About section.',                                            urlHint: 'https://youtube.com/@yourchannel' },
+  reddit:      { label: 'Reddit',               instruction: 'Add this code to your Reddit profile bio.',                                                       urlHint: 'https://reddit.com/u/yourname' },
+  instagram:   { label: 'Instagram',            instruction: 'Add this code to your Instagram bio.',                                                            urlHint: 'https://instagram.com/yourhandle' },
+  twitch:      { label: 'Twitch',               instruction: 'Add this code to your Twitch About / Bio section.',                                               urlHint: 'https://twitch.tv/yourhandle' },
+  tiktok:      { label: 'TikTok',               instruction: 'Add this code to your TikTok bio.',                                                               urlHint: 'https://tiktok.com/@yourhandle' },
+  bluesky:     { label: 'Bluesky',              instruction: 'Add this code to your Bluesky bio (profile description).',                                        urlHint: 'https://bsky.app/profile/yourhandle.bsky.social' },
+  mastodon:    { label: 'Mastodon',             instruction: 'Add this code to your Mastodon profile bio. Use your fully-qualified handle (user@instance).',    urlHint: 'https://mastodon.social/@yourhandle' },
+  rumble:      { label: 'Rumble',               instruction: 'Add this code to your Rumble channel About section.',                                             urlHint: 'https://rumble.com/c/yourchannel' },
+  truthsocial: { label: 'TruthSocial',          instruction: 'Add this code to your TruthSocial profile bio.',                                                  urlHint: 'https://truthsocial.com/@yourhandle' },
+  odysee:      { label: 'Odysee',               instruction: 'Add this code to your Odysee channel description.',                                               urlHint: 'https://odysee.com/@YourChannel' },
+  kick:        { label: 'Kick',                 instruction: 'Add this code to your Kick channel Bio / About section.',                                         urlHint: 'https://kick.com/yourchannel' },
+  github:      { label: 'GitHub',               instruction: 'Add this code to your GitHub profile README or bio.',                                             urlHint: 'https://github.com/yourhandle' },
 };
 
 function VerifyForm() {
@@ -152,9 +160,11 @@ function VerifyForm() {
                   style={{ ...inp, cursor: 'pointer' }}
                 >
                   <option value="">— Select platform —</option>
-                  {Object.entries(PLATFORMS).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
+                  {LIVE_PLATFORMS.map(p => {
+                    const info = PLATFORMS[p.id];
+                    if (!info) return null;
+                    return <option key={p.id} value={p.id}>{p.icon} {info.label}</option>;
+                  })}
                 </select>
               </div>
               {error && (
@@ -232,8 +242,8 @@ function VerifyForm() {
                 </button>
               </div>
               <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>
-                <strong>v0.1 note:</strong> We trust you posted the code — no automated check is run yet.
-                Platform API verification ships in v0.2.
+                <strong>v0.4 note:</strong> Challenge submission is trust-based — we record that you declared a proof URL,
+                but do not independently fetch or verify it. Platform API auto-verification ships in v0.5.
               </p>
             </div>
           )}

@@ -74,7 +74,7 @@ export default function NavBar() {
               letterSpacing: '0.05em',
             }}
           >
-            v0.3 beta
+            v0.4 beta
           </span>
         </Link>
 
