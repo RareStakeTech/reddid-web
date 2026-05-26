@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, AlertCircle, Loader2, ShieldCheck, Clock, ExternalLink, Plus } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, ShieldCheck, Clock, ExternalLink, Plus, CreditCard, Trash2 } from 'lucide-react';
 import { PLATFORM_MAP, platformProfileUrl } from '@/lib/platforms';
 
 interface PageProps {
@@ -18,9 +18,12 @@ interface SocialProofPublic {
 }
 
 interface WalletPublic {
+  id: string;
   chain: string;
   address: string;
+  label?: string | null;
   primary?: boolean;
+  revokedAt?: string | null;
 }
 
 interface IdentityPublic {
@@ -81,7 +84,7 @@ function ProfileCompletion({ identity, displayName, bio, website }: {
 
   const steps: CompletionStep[] = [
     { label: 'Handle', done: true },
-    { label: 'RDD address', done: hasAddress, hint: 'Add a wallet via the API or next register' },
+    { label: 'RDD address', done: hasAddress, hint: 'Add a wallet in the Wallets section below' },
     { label: 'Display name', done: !!displayName.trim() },
     { label: 'Bio', done: !!bio.trim() },
     { label: 'Website', done: !!website.trim() },
@@ -160,6 +163,15 @@ export default function EditPage({ params }: PageProps) {
   const [saved, setSaved]              = useState(false);
   const [saveError, setSaveError]      = useState('');
 
+  // Wallet management state
+  const [walletAddress, setWalletAddress]     = useState('');
+  const [walletLabel, setWalletLabel]         = useState('');
+  const [addingWallet, setAddingWallet]       = useState(false);
+  const [walletAdded, setWalletAdded]         = useState(false);
+  const [walletError, setWalletError]         = useState('');
+  const [removingWalletId, setRemovingWalletId]   = useState<string | null>(null);
+  const [settingPrimaryId, setSettingPrimaryId]   = useState<string | null>(null);
+
   useEffect(() => {
     const stored = localStorage.getItem(`reddid_edittoken_${handle}`);
     if (stored) setEditToken(stored);
@@ -207,6 +219,99 @@ export default function EditPage({ params }: PageProps) {
       setSaveError('Network error. Please try again.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function refreshIdentity() {
+    try {
+      const res = await fetch(`/api/identities/${handle}`);
+      const data = await res.json();
+      if (data.identity) setIdentity(data.identity);
+    } catch { /* silent */ }
+  }
+
+  async function handleAddWallet() {
+    if (!editToken.trim()) { setWalletError('Edit token is required.'); return; }
+    if (!walletAddress.trim()) { setWalletError('Address is required.'); return; }
+    setAddingWallet(true);
+    setWalletError('');
+    setWalletAdded(false);
+
+    const existingRdd = (identity?.wallets ?? []).filter(w => w.chain === 'rdd' && !w.revokedAt);
+    try {
+      const res = await fetch(`/api/identities/${handle}/wallets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          editToken: editToken.trim(),
+          chain: 'rdd',
+          address: walletAddress.trim(),
+          label: walletLabel.trim() || null,
+          purpose: 'receive',
+          visibility: 'public',
+          primary: existingRdd.length === 0, // auto-primary if first RDD wallet
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWalletError(data.error ?? 'Failed to add wallet.');
+      } else {
+        setWalletAdded(true);
+        setWalletAddress('');
+        setWalletLabel('');
+        await refreshIdentity();
+        setTimeout(() => setWalletAdded(false), 4000);
+      }
+    } catch {
+      setWalletError('Network error. Please try again.');
+    } finally {
+      setAddingWallet(false);
+    }
+  }
+
+  async function handleSetPrimary(walletId: string) {
+    if (!editToken.trim()) { setWalletError('Edit token is required.'); return; }
+    setSettingPrimaryId(walletId);
+    setWalletError('');
+    try {
+      const res = await fetch(`/api/identities/${handle}/wallets/${walletId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editToken: editToken.trim(), primary: true }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setWalletError(data.error ?? 'Failed to set primary wallet.');
+      } else {
+        await refreshIdentity();
+      }
+    } catch {
+      setWalletError('Network error. Please try again.');
+    } finally {
+      setSettingPrimaryId(null);
+    }
+  }
+
+  async function handleRemoveWallet(walletId: string) {
+    if (!editToken.trim()) { setWalletError('Edit token is required to remove a wallet.'); return; }
+    setRemovingWalletId(walletId);
+    setWalletError('');
+    try {
+      const res = await fetch(`/api/identities/${handle}/wallets/${walletId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editToken: editToken.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setWalletError(data.error ?? 'Failed to remove wallet.');
+      } else {
+        await refreshIdentity();
+      }
+    } catch {
+      setWalletError('Network error. Please try again.');
+    } finally {
+      setRemovingWalletId(null);
     }
   }
 
@@ -414,6 +519,185 @@ export default function EditPage({ params }: PageProps) {
             </div>
           </div>
         </form>
+
+        {/* ── Wallets section ───────────────────────────────────────────── */}
+        <div style={{ borderTop: '1px solid var(--border)' }}>
+          <div style={sectionHead}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <CreditCard size={12} />
+              RDD Wallets
+              {identity && (identity.wallets ?? []).filter(w => w.chain === 'rdd' && !w.revokedAt).length > 0 && (
+                <span style={{ color: '#4ade80', fontWeight: 500 }}>
+                  · {(identity.wallets ?? []).filter(w => w.chain === 'rdd' && !w.revokedAt).length} linked
+                </span>
+              )}
+            </span>
+          </div>
+
+          <div style={{ padding: '0 32px 20px' }}>
+            {/* Existing wallets */}
+            {identity && (identity.wallets ?? []).filter(w => !w.revokedAt).length > 0 ? (
+              <div style={{ marginBottom: 16 }}>
+                {(identity.wallets ?? []).filter(w => !w.revokedAt).map(wallet => (
+                  <div
+                    key={wallet.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 14px',
+                      marginBottom: 6,
+                      background: '#0a0a0a',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, fontFamily: "'Rubik', sans-serif", color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {wallet.chain.toUpperCase()}
+                        </span>
+                        {wallet.primary && (
+                          <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(227,6,19,0.1)', border: '1px solid rgba(227,6,19,0.25)', color: 'var(--redd-red)', borderRadius: 4, padding: '1px 6px' }}>
+                            Primary
+                          </span>
+                        )}
+                        {wallet.label && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{wallet.label}</span>
+                        )}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-primary)', wordBreak: 'break-all', lineHeight: 1.4 }}>
+                        {wallet.address}
+                      </div>
+                    </div>
+                    {/* Set primary */}
+                    {!wallet.primary && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetPrimary(wallet.id)}
+                        disabled={settingPrimaryId === wallet.id}
+                        title="Set as primary wallet"
+                        style={{
+                          background: 'none',
+                          border: '1px solid var(--border)',
+                          borderRadius: 5,
+                          color: 'var(--text-dim)',
+                          cursor: settingPrimaryId === wallet.id ? 'not-allowed' : 'pointer',
+                          padding: '4px 9px',
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          flexShrink: 0,
+                          transition: 'all 0.12s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        {settingPrimaryId === wallet.id
+                          ? <Loader2 size={10} style={{ animation: 'spin 0.8s linear infinite' }} />
+                          : null}
+                        Set primary
+                      </button>
+                    )}
+                    {/* Remove */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveWallet(wallet.id)}
+                      disabled={removingWalletId === wallet.id}
+                      title="Remove this wallet"
+                      style={{
+                        background: 'none',
+                        border: '1px solid var(--border)',
+                        borderRadius: 5,
+                        color: 'var(--text-dim)',
+                        cursor: removingWalletId === wallet.id ? 'not-allowed' : 'pointer',
+                        padding: '4px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: '0.72rem',
+                        flexShrink: 0,
+                        transition: 'all 0.12s',
+                      }}
+                    >
+                      {removingWalletId === wallet.id
+                        ? <Loader2 size={11} style={{ animation: 'spin 0.8s linear infinite' }} />
+                        : <Trash2 size={11} />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--text-dim)', fontSize: '0.82rem', marginBottom: 14, marginTop: 12 }}>
+                No wallets linked yet. Add your RDD address below.
+              </p>
+            )}
+
+            {/* Add wallet form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+              <div>
+                <label style={{ ...label, fontSize: '0.74rem' }}>Add RDD address</label>
+                <input
+                  type="text"
+                  value={walletAddress}
+                  onChange={e => setWalletAddress(e.target.value.trim())}
+                  placeholder="R… or rdd1… (34 chars)"
+                  style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '0.82rem' }}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={walletLabel}
+                  onChange={e => setWalletLabel(e.target.value.slice(0, 60))}
+                  placeholder="Label (optional — e.g. Hot wallet)"
+                  style={{ ...inputStyle, fontSize: '0.82rem' }}
+                  maxLength={60}
+                />
+              </div>
+              {walletError && (
+                <div style={{ background: 'rgba(227,6,19,0.08)', border: '1px solid rgba(227,6,19,0.28)', borderRadius: 7, padding: '8px 12px', color: '#f87171', fontSize: '0.78rem', display: 'flex', gap: 7, alignItems: 'center' }}>
+                  <AlertCircle size={13} />
+                  {walletError}
+                </div>
+              )}
+              {walletAdded && (
+                <div style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.28)', borderRadius: 7, padding: '8px 12px', color: '#4ade80', fontSize: '0.78rem', display: 'flex', gap: 7, alignItems: 'center' }}>
+                  <CheckCircle2 size={13} />
+                  Wallet added successfully.
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleAddWallet}
+                disabled={addingWallet || !walletAddress.trim()}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: addingWallet || !walletAddress.trim() ? '#1a1a1a' : 'var(--redd-red)',
+                  color: addingWallet || !walletAddress.trim() ? 'var(--text-dim)' : 'white',
+                  border: 'none',
+                  borderRadius: 7,
+                  padding: '8px 18px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  fontFamily: "'Rubik', sans-serif",
+                  cursor: addingWallet || !walletAddress.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.12s',
+                }}
+              >
+                {addingWallet
+                  ? <><Loader2 size={13} style={{ animation: 'spin 0.8s linear infinite' }} /> Adding…</>
+                  : <><Plus size={13} /> Add wallet</>}
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* ── Social Accounts section (U11) ─────────────────────────────── */}
         <div style={{ borderTop: '1px solid var(--border)' }}>

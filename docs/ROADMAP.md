@@ -1,6 +1,6 @@
 # ReddWeb Roadmap
 
-**Last updated:** 2026-05-25 (v0.4.12)
+**Last updated:** 2026-05-25 (v0.4.14)
 
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
@@ -354,3 +354,4 @@ Ordered by dependency. Do not skip steps.
 | v0.4.11 | 2026-05-25 | config.ts env-var centralisation; .env.example; NEXT_PUBLIC_ prefix fix; .gitignore .env.example negation |
 | v0.4.12 | 2026-05-25 | PWA icons (192/512 PNG) generated from brand SVG; scripts/generate-icons.js; sharp devDependency |
 | v0.4.13 | 2026-05-25 | ARCHITECTURE.md; ROADMAP stale items fixed; love-button v2.6 E1/E2/E3 marked done |
+| v0.4.14 | 2026-05-25 | Edit page wallet management section — add, set-primary, remove RDD wallets inline |

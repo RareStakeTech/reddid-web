@@ -17,6 +17,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.14] — 2026-05-25
+
+### Changed
+- **`edit/[handle]/page.tsx`** — Wallet management section added between profile form and social accounts: shows all linked wallets with chain label, address, primary badge, and label; "Set primary" button on non-primary wallets (PATCH `/api/identities/[handle]/wallets/[id]`); remove button per wallet (DELETE); add-wallet form with address input, optional label, and auto-primary assignment for the first RDD wallet; inline success/error feedback with live identity refresh after each operation; profile completion chip hint updated from "Add a wallet via the API or next register" to "Add a wallet in the Wallets section below"
+
+### Added
+- `CreditCard`, `Trash2` Lucide icons imported in edit page for wallet management UI
+- `WalletPublic.id`, `WalletPublic.label`, `WalletPublic.revokedAt` fields added to the edit-page local interface (aligns with the `WalletLink` shape returned by `publicIdentity()`)
+- `handleAddWallet`, `handleSetPrimary`, `handleRemoveWallet`, `refreshIdentity` async handlers in the edit page
+
+---
+
 ## [0.4.13] — 2026-05-25
 
 ### Added
