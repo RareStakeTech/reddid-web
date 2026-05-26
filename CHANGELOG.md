@@ -18,6 +18,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.6] — 2026-05-26
+
+### Changed
+- **`edit/[handle]/page.tsx`** (U11) — Social Accounts section added below the profile form: lists all current social proofs with platform icon/name, username, and verification status badge (Verified ✓ / Self-reported / Failed); each unverified proof has a "Verify →" link to `/verify?handle={handle}&platform={platform}`; external link to the actual platform profile; "Add another account" link at the bottom; empty-state message links to `/verify`; status badge colours match trust level (green verified, dim pending, red failed)
+- **`pay/[handle]/PayClient.tsx`** (U12) — "Save QR as PNG" button added below the QR code; uses `XMLSerializer` to serialise the SVG, renders to an offscreen 512×512 canvas with white background, and triggers a `<a download="reddid-{handle}-qr.png">` click; no external dependencies; `Download` icon from lucide-react
+
+---
+
 ## [0.4.5] — 2026-05-26
 
 ### Added

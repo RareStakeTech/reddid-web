@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Copy, ExternalLink, Wallet } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Copy, ExternalLink, Wallet, Download } from 'lucide-react';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { buildBip21Uri } from '@/lib/validation';
 
@@ -16,6 +16,39 @@ interface PayClientProps {
 export default function PayClient({ handle, displayName, address }: PayClientProps) {
   const [amount, setAmount] = useState<number | ''>('');
   const [copied, setCopied] = useState<'addr' | 'uri' | null>(null);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  // U12 — export the QR SVG as a PNG download
+  async function downloadQR() {
+    const wrapper = qrRef.current;
+    if (!wrapper) return;
+    const svg = wrapper.querySelector('svg');
+    if (!svg) return;
+
+    const size = 512; // export at 512×512 for quality
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+
+      const link = document.createElement('a');
+      link.download = `reddid-${handle}-qr.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    img.src = url;
+  }
 
   const bip21 = amount && Number(amount) > 0
     ? buildBip21Uri(address, Number(amount))
@@ -111,12 +144,36 @@ export default function PayClient({ handle, displayName, address }: PayClientPro
 
       {/* QR code */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-        <QRCodeDisplay value={bip21} size={200} />
+        <div ref={qrRef}>
+          <QRCodeDisplay value={bip21} size={200} />
+        </div>
         <p style={{ fontSize: '0.73rem', color: 'var(--text-dim)', textAlign: 'center', maxWidth: 260 }}>
           {amount && Number(amount) > 0
             ? `Scan to send Ɍ ${Number(amount).toLocaleString()} RDD to @${handle}`
             : `Scan to open @${handle}'s address in your ReddCoin wallet`}
         </p>
+        {/* U12 — Save QR as PNG */}
+        <button
+          type="button"
+          onClick={downloadQR}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            background: 'none',
+            border: '1px solid var(--border)',
+            borderRadius: 5,
+            color: 'var(--text-dim)',
+            fontSize: '0.72rem',
+            fontFamily: "'Rubik', sans-serif",
+            fontWeight: 500,
+            padding: '4px 12px',
+            cursor: 'pointer',
+          }}
+        >
+          <Download size={11} />
+          Save QR as PNG
+        </button>
       </div>
 
       {/* Open in wallet */}
