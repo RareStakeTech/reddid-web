@@ -17,6 +17,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.15] — 2026-05-25
+
+### Changed
+- **`docs/ROADMAP.md`** — E4 (embed badge) and E6 (configurable tip URL) marked ✅ done; love-button v2.7 and v2.8 added to version history; last-updated bumped to v0.4.15
+
+---
+
 ## [0.4.14] — 2026-05-25
 
 ### Changed

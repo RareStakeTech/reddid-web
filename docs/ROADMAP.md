@@ -1,6 +1,6 @@
 # ReddWeb Roadmap
 
-**Last updated:** 2026-05-25 (v0.4.14)
+**Last updated:** 2026-05-25 (v0.4.15)
 
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
@@ -127,9 +127,9 @@ These live in the `love-button` repo but are user-facing improvements to the ext
 | E1 | ✅ **Popup: handle suggestions on "not found"** — `fetchSuggestions()` calls `/api/search`; "Did you mean?" chips with clickable handles | Done love-button v2.6 |
 | E2 | ✅ **Popup: "Share this creator" button** — copies `{apiBase}/{handle}` to clipboard with green flash feedback | Done love-button v2.6 |
 | E3 | ✅ **Popup: keyboard navigation** — ArrowDown/Up cycle history; Escape returns focus to search; Enter/Space activates | Done love-button v2.6 |
-| E4 | **Extension: "Tip me" embed badge generator** — popup result page shows a copyable HTML `<a href="redd.love/@handle"><img ...></a>` badge snippet for creator websites | Drives organic discovery; creator puts badge in blog/docs/footer |
+| E4 | ✅ **Extension: embed badge HTML snippet** — "📋 Embed" ghost button copies a self-contained `<a>` button badge (pure inline CSS, no external assets) | Done love-button v2.7 |
 | E5 | **Content scripts: RDD address detection** — scan page text for `R[A-Za-z0-9]{33}` / `rdd1[a-z0-9]{39}` patterns; offer a "Look up this address on ReddID" context menu option | Many creators share raw addresses; this bridges the gap until they register |
-| E6 | **Extension: configurable tip URL target** — settings option to open `redd.love/@handle` vs `redd.love/pay/@handle` when clicking the in-page tip button | /pay is more focused for payers; let extension users choose |
+| E6 | ✅ **Extension: configurable tip URL target** — Settings dropdown: Tip page vs Payment page; applies to popup + 7 util-based content scripts | Done love-button v2.8 |
 | E7 | **Extension popup: show social proof badges** — display each linked platform with 🔗/○ badge inline with the identity result | Currently only shows address and balance tabs; social proof shown but could be richer |
 
 ### Deployment & Production Readiness
@@ -355,3 +355,4 @@ Ordered by dependency. Do not skip steps.
 | v0.4.12 | 2026-05-25 | PWA icons (192/512 PNG) generated from brand SVG; scripts/generate-icons.js; sharp devDependency |
 | v0.4.13 | 2026-05-25 | ARCHITECTURE.md; ROADMAP stale items fixed; love-button v2.6 E1/E2/E3 marked done |
 | v0.4.14 | 2026-05-25 | Edit page wallet management section — add, set-primary, remove RDD wallets inline |
+| v0.4.15 | 2026-05-25 | ROADMAP updated: E4/E6 marked done; love-button v2.7 embed badge, v2.8 tip target |
