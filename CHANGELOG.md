@@ -11,10 +11,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Platform API verification for social proofs (v0.5 — check bio/posts for challenge code via platform APIs)
 - ReddRail state channel sessions (real Gajumaru Associate Chain integration; expected Q3/Q4 2026)
 - AI-agent payment policies (v0.4)
-- PWA icons (`/icon-192.png`, `/icon-512.png`) — placeholder manifest already in place
 - Wallet signature verification (ECDSA, reddcoinjs-lib) — v0.5
 - `DELETE /api/identities/[handle]` self-service account deletion — v0.5
 - Automated test suite (vitest + Testing Library) — v0.5
+
+---
+
+## [0.4.12] — 2026-05-25
+
+### Added
+- **`public/icon-192.png`** and **`public/icon-512.png`** — PWA icons generated from `public/brand/ReddCoin-Pinwheel-CLR-256.svg` using `sharp`; fulfils the PNG icon entries already declared in `manifest.webmanifest`
+- **`scripts/generate-icons.js`** — Node.js build script (`sharp`) that converts the brand SVG pinwheel to 192×192 and 512×512 PNG; run with `node scripts/generate-icons.js` to regenerate if the source SVG changes
+- **`sharp` devDependency** — added to `package.json` for icon generation
 
 ---
 
