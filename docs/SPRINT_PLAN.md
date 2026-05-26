@@ -1,5 +1,5 @@
 # ReddID Sprint Plan
-**Version:** v0.4 | **Date:** 2026-05-26
+**Version:** v0.4 | **Date:** 2026-05-26 (S4-04 updated 2026-05-26)
 **Principle:** No castles on fog. Each sprint leaves the product more real, more honest, and more testable than it started.
 **Team:** Jay TechAdept (product + eng), Claude Code (implementation partner)
 
@@ -177,7 +177,7 @@
 | S4-01 | SQLite data store (better-sqlite3) | src/lib/store/sqlite-store.ts | Passes all DataStore interface methods; WAL mode; atomic writes | ✅ DONE v0.4.27 |
 | S4-02 | Migration script (data/db.json → SQLite) | scripts/migrate-to-sqlite.ts | All existing identities preserved; checksums verified; reversible via REDDID_DB_ENGINE=json | ✅ DONE v0.4.27 |
 | S4-03 | Atomic writes + WAL mode | sqlite-store.ts | Part of S4-01 — WAL mode + transactions on all writes | ✅ DONE v0.4.27 |
-| S4-04 | Railway deployment | railway.toml | Live at redd.love; persistent volume at /app/data; zero-downtime deploys | [ ] |
+| S4-04 | Railway deployment | railway.toml, nixpacks.toml | Live at redd.love; persistent volume at /app/data; zero-downtime deploys | ✅ DONE v0.4.29 |
 | S4-05 | Environment variable management | src/lib/config.ts, .env.example | All required vars documented; REDDID_DB_ENGINE, ADMIN_SECRET, DB_PATH confirmed | ✅ DONE v0.4.26 |
 | S4-06 | Rate limiting (SQLite-backed) | src/lib/rate-limit.ts, sqlite-store.ts | rate_limit_counters table; persists across restarts; per-IP and per-handle | ✅ DONE v0.4.28 |
 | S4-07 | HTTPS enforcement | next.config.ts | Redirect all HTTP → HTTPS via x-forwarded-proto check | ✅ DONE v0.4.26 |
@@ -196,6 +196,61 @@ Fixed: now writes to `DB_PATH + '.migrate.tmp'` then `renameSync` to `DB_PATH` �
 - **migrate.ts / SQLite conflict**: when `REDDID_DB_ENGINE=sqlite`, skip `runMigrations()` (JSON-only); SQLite store bootstraps its own schema in the constructor
 - **Railway multi-instance**: SQLite on a shared volume breaks under auto-scaling. Single-instance only in v0.4. Document in ARCHITECTURE.md.
 - **CWS review lag**: Chrome Web Store takes 7–14 days post-submission. Start screenshots/tile NOW, in parallel with server work.
+
+### S4-04 Railway Deploy — Two-Checkpoint Strategy (Jay action required)
+
+#### Pre-flight checklist (do this ONCE before first deploy)
+
+1. **Create a Railway persistent volume** — Railway dashboard → your project → "Add Volume"
+   - Mount path: `/app/data`
+   - This volume persists `db.json` (and later `reddid.db`) across redeployments.
+   - **If you skip this step, all data is wiped on every deploy.**
+
+2. **Set required environment variables** in Railway dashboard → project → "Variables":
+
+   | Variable | Value for Checkpoint 1 | Notes |
+   |----------|------------------------|-------|
+   | `REDDID_DB_PATH` | `/app/data/db.json` | Must point inside the mounted volume |
+   | `REDDID_DB_ENGINE` | `json` | JSON store for initial safe deploy |
+   | `ADMIN_SECRET` | `<32-char hex>` | Generate: `openssl rand -hex 32` |
+   | `NEXT_PUBLIC_REDDID_BASE_URL` | `https://<your-railway-url>` | e.g. `https://reddid-web-production.up.railway.app` (or custom domain) |
+   | `NODE_ENV` | `production` | Railway may set this automatically; set explicitly to be safe |
+
+3. **Confirm auto-deploy is on master branch** — Railway dashboard → Deployments → Source branch = `master`
+
+#### Checkpoint 1 — Deploy with JSON store (safe baseline)
+
+After pre-flight is complete, push any commit. Railway will:
+1. Pull from `master`
+2. Run `npm ci && npm run build` (nixpacks.toml)
+3. Start with `npm start` (next start on dynamic PORT)
+
+**Verify Checkpoint 1:**
+- [ ] App loads at Railway URL
+- [ ] `GET /api/identities/<existing-handle>` returns data (if you have handles in db.json)
+- [ ] `POST /api/identities` (register a test handle) → new entry persists after `railway restart`
+- [ ] `/admin/reports?secret=<ADMIN_SECRET>` loads
+
+#### Checkpoint 2 — Flip to SQLite (after data is confirmed safe)
+
+Once Checkpoint 1 is healthy and data is confirmed on the volume:
+
+1. SSH into Railway (or use Railway CLI): copy `db.json` to a local backup first
+2. Run the migration: `npm run migrate:sqlite` (this runs on the Railway instance, or locally with the volume path)
+3. In Railway dashboard → Variables, update:
+   - `REDDID_DB_ENGINE` → `sqlite`
+   - `REDDID_DB_PATH` → `/app/data/db.json` (unchanged — SQLite store derives `.db` path from same dir)
+4. Trigger a redeployment (or Railway auto-deploys on variable change)
+
+**Verify Checkpoint 2:**
+- [ ] All existing handles still accessible
+- [ ] Rate limit counters persist across `railway restart`
+- [ ] `/admin/reports` still loads
+- [ ] `REDDID_DB_ENGINE=json` rollback path confirmed: set var back, restart → falls back to db.json
+
+#### Railway config files created (v0.4.29)
+- `railway.toml` — build + deploy commands, health check path, restart policy
+- `nixpacks.toml` — pins Node 24 (matches CI), ensures python3/make/gcc for better-sqlite3 native build
 
 **Risks:**
 - SQLite migration is the highest-risk operation — checkpoint deploy with JSON store first; keep db.json on volume as fallback

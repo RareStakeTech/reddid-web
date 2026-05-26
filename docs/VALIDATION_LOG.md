@@ -1,6 +1,6 @@
 # ReddID Validation Log
 **Purpose:** Evidence gate — actual command results, not claimed ones. Run before every release sprint begins.
-**Last updated:** 2026-05-26 (Sprint 4 S4-05/S4-07/S4-08 added)
+**Last updated:** 2026-05-26 (Sprint 4 S4-04 Railway config added)
 
 ---
 
@@ -568,6 +568,46 @@ Direct SQLite verification:
 - Rate limiting still in-memory for JSON store (S4-06 next — integrate checkRateLimit() into rate-limit.ts)
 - Not yet deployed to Railway (S4-04 — set REDDID_DB_PATH, REDDID_DB_ENGINE, ADMIN_SECRET, NEXT_PUBLIC_REDDID_BASE_URL in Railway dashboard, configure persistent volume at /app/data)
 - data/reddid.db added to repo data/ directory — should be in .gitignore
+
+---
+
+---
+
+## Sprint 4 — Checkpoint 3: S4-04 Railway deployment config (v0.4.29)
+
+### Build validation
+```
+Command: npx tsc --noEmit && npm run lint && npm run build
+Status: PASS ✅
+Date: 2026-05-26
+Version: 0.4.29
+Notes: Config-only change (railway.toml + nixpacks.toml); no TypeScript changes.
+       Build results identical to v0.4.28 baseline.
+```
+
+### Railway config files validated
+| File | Check | Result |
+|------|-------|--------|
+| `railway.toml` | builder = "nixpacks", buildCommand = "npm ci && npm run build", startCommand = "npm start" | ✅ |
+| `railway.toml` | healthcheckPath = "/", healthcheckTimeout = 30 | ✅ |
+| `railway.toml` | restartPolicyType = "on_failure", maxRetries = 3 | ✅ |
+| `nixpacks.toml` | nixPkgs = ["nodejs_24", "python3", "gnumake", "gcc"] | ✅ |
+| `nixpacks.toml` | Node 24 matches CI (`.github/workflows/ci.yml` node-version: '24') | ✅ |
+| `nixpacks.toml` | python3 + gnumake + gcc: required for better-sqlite3 native build (node-gyp) | ✅ |
+
+### Two-checkpoint deploy strategy validated (design review)
+| Step | Verification |
+|------|-------------|
+| Checkpoint 1: REDDID_DB_ENGINE=json | JSON store path in getStore() confirmed; no sqlite dependency on first deploy |
+| Checkpoint 2: flip REDDID_DB_ENGINE=sqlite | SqliteDataStore instantiated; rate_limit_counters persist; WAL mode active |
+| Rollback path | Switch REDDID_DB_ENGINE=json → falls back to db.json instantly; no data loss |
+| Volume mount | /app/data must be mounted BEFORE first deploy or db.json lost on redeploy |
+| PORT binding | Railway sets PORT env var; next start reads it automatically; no hardcoded port |
+
+### Known issues after Sprint 4 Checkpoint 3
+- Railway deploy not yet live (Jay action required: configure volume + env vars in Railway dashboard per SPRINT_PLAN.md S4-04 two-checkpoint checklist)
+- S4-11 Chrome Web Store submission still pending (screenshots + CWS account — Jay-work; extension code is ready)
+- Sprint 4 complete pending Railway go-live confirmation
 
 ---
 

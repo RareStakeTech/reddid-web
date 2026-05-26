@@ -1,0 +1,21 @@
+# nixpacks.toml — Build configuration for Railway's Nixpacks builder
+# Docs: https://nixpacks.com/docs/config
+#
+# Purpose:
+#   1. Pin Node.js to v24 to match CI (.github/workflows/ci.yml uses node-version: '24')
+#   2. Ensure native build toolchain is available for better-sqlite3 (S4-01)
+#      better-sqlite3 compiles a native .node addon at npm install time via node-gyp.
+#      Nixpacks includes python3 + make + gcc by default for Node.js apps,
+#      so this is provided automatically — this file confirms/documents it.
+
+[phases.setup]
+nixPkgs = ["nodejs_24", "python3", "gnumake", "gcc"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"

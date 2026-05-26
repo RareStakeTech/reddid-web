@@ -1,0 +1,32 @@
+# railway.toml — Railway deployment configuration for reddid-web
+# Docs: https://docs.railway.com/reference/config-as-code
+#
+# Two-checkpoint deploy strategy:
+#   Checkpoint 1 (initial deploy) — REDDID_DB_ENGINE=json  (JSON file store; safe starting point)
+#   Checkpoint 2 (after migration) — flip REDDID_DB_ENGINE=sqlite (SQLite; persistent, concurrent-safe)
+#
+# Required env vars to set in the Railway dashboard BEFORE deploying:
+#   REDDID_DB_PATH            /app/data/db.json           (must point inside the mounted volume)
+#   REDDID_DB_ENGINE          json                        (Checkpoint 1; switch to sqlite later)
+#   ADMIN_SECRET              <32-char hex>               (openssl rand -hex 32)
+#   NEXT_PUBLIC_REDDID_BASE_URL  https://<your-domain>   (your Railway URL or custom domain)
+#
+# Persistent volume:
+#   Mount a Railway volume at /app/data before the first deploy.
+#   The volume persists db.json (and later reddid.db) across redeployments.
+#   WITHOUT the volume, all data is lost on every deploy.
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[environments.production]
+# Railway sets PORT automatically; Next.js reads it via the PORT env var.
+# Do not hardcode PORT here — Railway assigns a dynamic value.

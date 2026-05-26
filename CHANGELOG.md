@@ -16,6 +16,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.29] — 2026-05-26 — Sprint 4: S4-04 Railway deployment config
+
+### Added (S4-04 — Railway deployment)
+- `railway.toml` — Railway config-as-code: nixpacks builder, `npm ci && npm run build`, `npm start`, health check at `/`, on_failure restart policy (3 retries)
+- `nixpacks.toml` — Pins Node.js 24 (matches CI `node-version: '24'`), explicitly includes `python3 + gnumake + gcc` for `better-sqlite3` native addon compilation via node-gyp
+
+### Documentation (S4-04)
+- `docs/SPRINT_PLAN.md` — Two-checkpoint deploy strategy documented with:
+  - Pre-flight checklist: persistent volume setup at `/app/data`; all required env vars with exact values for Checkpoint 1
+  - Checkpoint 1 verification steps (JSON store baseline)
+  - Checkpoint 2 steps for SQLite flip-over + verification
+  - Rollback path documented (`REDDID_DB_ENGINE=json`)
+
+### Build results (v0.4.29)
+- `tsc --noEmit` → exit 0 ✅
+- `npm run lint` → exit 0 ✅
+- `npm run build` → exit 0 ✅
+
+---
+
 ## [0.4.28] — 2026-05-26 — Sprint 4: S4-06 SQLite-backed rate limiting
 
 ### Changed (S4-06 — persistent rate limiting)
