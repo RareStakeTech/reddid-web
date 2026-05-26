@@ -139,10 +139,10 @@ These are not features but are required before any public launch announcement.
 | D1 | **Railway deployment with persistent volume** — mount `/app/data` as a persistent volume; set `PORT` env; confirm `data/db.json` survives redeploys | **Blocker** — current Vercel/serverless deploy will wipe db.json on every deploy |
 | D2 | **SqliteDataStore implementing DataStore interface** — swap `JsonFileDataStore` for SQLite via `better-sqlite3`; no route changes (all routes go through `getStore()`); migration script from db.json | **Blocker for scale** — flat JSON has no atomic writes; risk of corruption under concurrent requests |
 | D3 | **Environment variable config** — `REDDID_API_BASE`, `REDDID_BLOCKBOOK_URL`, `REDDID_DB_PATH`, `NODE_ENV`; validate at startup | Required for Railway; avoids hardcoded paths |
-| D4 | **Proper README** — replace create-next-app stub with project overview, install steps, env vars, API reference, dev/prod run instructions | Required for contributors and store reviewers who inspect source |
-| D5 | **`SECURITY.md`** — responsible disclosure address, scope, out-of-scope (no bug bounty yet), contact | Good-faith security disclosure path |
-| D6 | **`CONTRIBUTING.md`** — how to add a platform, how to open a PR, code style, changelog requirement | Required before accepting community PRs |
-| D7 | **CI: add `npm run build` check** — GitHub Actions currently runs `tsc --noEmit` and lint; add a full Next.js build step to catch RSC/bundler errors that tsc misses | Prevents shipping broken builds |
+| D4 | ✅ **Proper README** — project overview, feature table, architecture, API route reference, docs index | Done (pre-existing, updated) |
+| D5 | ✅ **`SECURITY.md`** — responsible disclosure, scope table, out-of-scope, key constraints, contact | Done v0.4.10 |
+| D6 | ✅ **`CONTRIBUTING.md`** — dev setup, env vars, code style, changelog requirement, platform-addition guide, PR workflow | Done v0.4.10 |
+| D7 | ✅ **CI: `npm run build` check** — already present in `.github/workflows/ci.yml` `build` job | Done v0.4.5 |
 | D8 | **Rate limiting hardening** — current in-memory rate limiter resets on server restart; replace with file-backed or SQLite-backed counters | Required before public launch to prevent registration spam |
 
 ### Chrome Web Store / Firefox AMO Submission Checklist

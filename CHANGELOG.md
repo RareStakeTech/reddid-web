@@ -18,6 +18,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.10] — 2026-05-25
+
+### Added
+- **`SECURITY.md`** (D5) — responsible disclosure policy: email contact, in-scope vulnerability table (auth bypass, injection, info disclosure, SSRF, address manipulation, rate-limit bypass, challenge replay), out-of-scope list, key system constraints (no private keys, editToken auth model, flat-JSON concurrency caveat), no-bounty notice, maintainer contact
+- **`CONTRIBUTING.md`** (D6) — contributor guide: dev setup, environment variables, code style rules (TypeScript, `'use client'` hygiene, Lucide icons, font convention, ESLint zero-warnings), **changelog requirement** (every PR touching `src/`/`public/` must add a CHANGELOG entry), step-by-step platform-addition guide referencing `platforms.ts` + content-script + PLUGINS.md, PR workflow, commit prefix convention
+
+---
+
 ## [0.4.9] — 2026-05-25
 
 ### Changed
