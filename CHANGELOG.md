@@ -18,6 +18,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.8] — 2026-05-25
+
+### Changed
+- **`edit/[handle]/page.tsx`** (U17) — Profile completion indicator added between the header and the profile form; shows a labelled progress bar (N/7) and 7 step-chips: Handle ✓, RDD address, Display name, Bio, Website, Social link, Verified link; chips turn green and show ✓ when complete, grey ○ when not; bar fills from red to green; all-complete state tints the strip green; chip tooltip (`title`) explains what's needed for each incomplete step; `WalletPublic` interface added to the edit page so address presence can be checked from the API response; indicator updates live as the user types display name / bio / website in the form
+
+---
+
 ## [0.4.7] — 2026-05-25
 
 ### Added

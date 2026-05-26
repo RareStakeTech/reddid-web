@@ -17,11 +17,18 @@ interface SocialProofPublic {
   addedAt: string;
 }
 
+interface WalletPublic {
+  chain: string;
+  address: string;
+  primary?: boolean;
+}
+
 interface IdentityPublic {
   handle: string;
   displayName: string | null;
   bio: string | null;
   website: string | null;
+  wallets: WalletPublic[];
   socialProofs: SocialProofPublic[];
 }
 
@@ -52,6 +59,88 @@ function StatusBadge({ status }: { status?: string }) {
       <Icon size={10} />
       {cfg.label}
     </span>
+  );
+}
+
+// U17 — Profile completion indicator
+interface CompletionStep {
+  label: string;
+  done: boolean;
+  hint?: string;
+}
+
+function ProfileCompletion({ identity, displayName, bio, website }: {
+  identity: IdentityPublic;
+  displayName: string;
+  bio: string;
+  website: string;
+}) {
+  const hasAddress = identity.wallets.some(w => w.chain === 'rdd' && !!(w.address));
+  const hasProof = identity.socialProofs.length > 0;
+  const hasVerified = identity.socialProofs.some(p => p.verificationStatus === 'verified');
+
+  const steps: CompletionStep[] = [
+    { label: 'Handle', done: true },
+    { label: 'RDD address', done: hasAddress, hint: 'Add a wallet via the API or next register' },
+    { label: 'Display name', done: !!displayName.trim() },
+    { label: 'Bio', done: !!bio.trim() },
+    { label: 'Website', done: !!website.trim() },
+    { label: 'Social link', done: hasProof, hint: 'Link at least one social account' },
+    { label: 'Verified link', done: hasVerified, hint: 'Verify at least one social account' },
+  ];
+
+  const doneCount = steps.filter(s => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+  const allDone = doneCount === steps.length;
+
+  return (
+    <div style={{
+      padding: '14px 32px',
+      borderBottom: '1px solid var(--border-subtle)',
+      background: allDone ? 'rgba(74,222,128,0.04)' : 'rgba(255,255,255,0.01)',
+    }}>
+      {/* Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-dim)', fontFamily: "'Rubik', sans-serif", whiteSpace: 'nowrap' }}>
+          Profile {pct}% complete
+        </div>
+        <div style={{ flex: 1, height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${pct}%`,
+            background: allDone ? '#4ade80' : 'var(--redd-red)',
+            borderRadius: 2,
+            transition: 'width 0.4s ease',
+          }} />
+        </div>
+        <div style={{ fontSize: '0.68rem', color: allDone ? '#4ade80' : 'var(--text-dim)', fontWeight: 600 }}>
+          {doneCount}/{steps.length}
+        </div>
+      </div>
+
+      {/* Step chips */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {steps.map(s => (
+          <span
+            key={s.label}
+            title={!s.done && s.hint ? s.hint : undefined}
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              fontFamily: "'Rubik', sans-serif",
+              padding: '2px 8px',
+              borderRadius: 20,
+              background: s.done ? 'rgba(74,222,128,0.08)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${s.done ? 'rgba(74,222,128,0.3)' : 'var(--border)'}`,
+              color: s.done ? '#4ade80' : 'var(--text-dim)',
+              cursor: s.done ? 'default' : 'help',
+            }}
+          >
+            {s.done ? '✓' : '○'} {s.label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -208,6 +297,16 @@ export default function EditPage({ params }: PageProps) {
             Changes are applied immediately. Your edit token is required to authorise updates.
           </p>
         </div>
+
+        {/* U17 — Profile completion indicator */}
+        {identity && (
+          <ProfileCompletion
+            identity={identity}
+            displayName={displayName}
+            bio={bio}
+            website={website}
+          />
+        )}
 
         {/* Profile form */}
         <form onSubmit={handleSubmit}>
