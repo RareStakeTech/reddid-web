@@ -345,3 +345,4 @@ A guided checklist for Jay to run as the product founder — combines first-impr
 | editToken never expires | Security risk if token leaked | Sprint A priority |
 | Rate limiting resets on restart | Abuse possible in production | Sprint A priority |
 | No account deletion | User cannot remove themselves | Sprint A priority |
+| Rate-limit error swallows validation message | If a user exhausts their registration quota (3/IP/hour), subsequent attempts show 'Too many registrations' even if the handle/address is invalid. UX impact: low — rare scenario, rate limit message is informative. | Intentional: security best practice to rate-limit before validation. |
