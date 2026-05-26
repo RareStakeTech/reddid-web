@@ -12,8 +12,7 @@ import path from 'path';
 import crypto from 'crypto';
 import type { RevocationRegistry, RecordRevocationInput } from '@/lib/providers/revocation-registry';
 import type { RevocationEvent, DbSchema } from '@/lib/types';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+import { DB_PATH } from '@/lib/config';
 
 function readRevocationEvents(): RevocationEvent[] {
   try {

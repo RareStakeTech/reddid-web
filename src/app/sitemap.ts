@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllIdentities } from '@/lib/db';
-
-const BASE_URL = 'https://redd.love';
+import { BASE_URL } from '@/lib/config';
 
 // Static pages that are always present
 const STATIC_ROUTES: MetadataRoute.Sitemap = [

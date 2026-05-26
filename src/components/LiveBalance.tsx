@@ -22,8 +22,10 @@ export default function LiveBalance({ address }: { address: string }) {
 
   async function fetchBalance() {
     try {
+      const blockbookUrl =
+        process.env.NEXT_PUBLIC_REDDID_BLOCKBOOK_URL ?? 'https://blockbook.reddcoin.com';
       const res = await fetch(
-        `https://blockbook.reddcoin.com/api/v2/address/${encodeURIComponent(address)}`,
+        `${blockbookUrl}/api/v2/address/${encodeURIComponent(address)}`,
         { cache: 'no-store' }
       );
       if (!res.ok) throw new Error('fetch failed');

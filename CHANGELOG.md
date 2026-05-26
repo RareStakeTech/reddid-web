@@ -18,6 +18,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.11] — 2026-05-25
+
+### Added
+- **`src/lib/config.ts`** (D3) — centralised environment-variable config: `DB_PATH` (`REDDID_DB_PATH`), `BLOCKBOOK_URL` (`REDDID_BLOCKBOOK_URL`), `BASE_URL` (`NEXT_PUBLIC_REDDID_BASE_URL`); all have production-safe defaults so no env vars are required for local dev
+- **`.env.example`** (D3) — documents all supported env vars with defaults and deployment notes for Railway persistent-volume setup
+
+### Changed
+- **`store/json-file-store.ts`**, **`migrate.ts`**, **`providers/mock/mock-revocation-registry.ts`** — removed hardcoded `path.join(process.cwd(), 'data', 'db.json')`; now import `DB_PATH` from `@/lib/config`
+- **`components/LiveBalance.tsx`** — Blockbook URL now reads `process.env.NEXT_PUBLIC_REDDID_BLOCKBOOK_URL` with `blockbook.reddcoin.com` fallback (client-safe `NEXT_PUBLIC_` prefix required for browser access)
+- **`app/sitemap.ts`** — `BASE_URL` constant replaced by import from `@/lib/config`; sitemap will reflect `NEXT_PUBLIC_REDDID_BASE_URL` if set
+
+---
+
 ## [0.4.10] — 2026-05-25
 
 ### Added

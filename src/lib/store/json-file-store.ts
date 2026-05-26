@@ -23,8 +23,7 @@ import type {
   DbSchema,
 } from '@/lib/types';
 import type { AddWalletInput } from '@/lib/providers/wallet-link-provider';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+import { DB_PATH } from '@/lib/config';
 const EMPTY_DB: DbSchema = { identities: [], revocationEvents: [], version: 1 };
 
 export class JsonFileDataStore implements DataStore {

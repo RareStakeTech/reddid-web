@@ -24,8 +24,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { Identity, DbSchema } from './types';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+import { DB_PATH } from './config';
 
 export const CURRENT_SCHEMA_VERSION = 2;
 
