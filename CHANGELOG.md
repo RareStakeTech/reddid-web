@@ -17,6 +17,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.17] — 2026-05-26
+
+### Added
+- **`docs/STRATEGY.md`** — full cross-functional team review: Senior Architect, UX, Virality, Gamification, Performance, Security, Community findings; priority matrix; 5-sprint plan (A: Production Foundation → B: Trust/Gamification → C: Viral Growth → D: Security/Store → E: Analytics/Verification); risk register; key metrics targets
+- **`docs/ROADMAP.md`** — new "Sprint Plan — Active" section with Sprint A–E task lists; E7 marked ✅ (love-button v2.10); E8/E9/E10 extension items added; last-updated bumped to v0.4.17
+
+---
+
 ## [0.4.16] — 2026-05-25
 
 ### Changed

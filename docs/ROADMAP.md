@@ -1,6 +1,6 @@
 # ReddWeb Roadmap
 
-**Last updated:** 2026-05-25 (v0.4.16)
+**Last updated:** 2026-05-26 (v0.4.17 — post strategy review)
 
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
@@ -130,7 +130,10 @@ These live in the `love-button` repo but are user-facing improvements to the ext
 | E4 | ✅ **Extension: embed badge HTML snippet** — "📋 Embed" ghost button copies a self-contained `<a>` button badge (pure inline CSS, no external assets) | Done love-button v2.7 |
 | E5 | **Content scripts: RDD address detection** — scan page text for `R[A-Za-z0-9]{33}` / `rdd1[a-z0-9]{39}` patterns; offer a "Look up this address on ReddID" context menu option | Many creators share raw addresses; this bridges the gap until they register |
 | E6 | ✅ **Extension: configurable tip URL target** — Settings dropdown: Tip page vs Payment page; applies to popup + all 13 content scripts | Done love-button v2.8/v2.9 |
-| E7 | **Extension popup: show social proof badges** — display each linked platform with 🔗/○ badge inline with the identity result | Currently only shows address and balance tabs; social proof shown but could be richer |
+| E7 | ✅ **Extension popup: richer social proof badges** — clickable platform links; platform name display; green ● for proof-linked, grey ○ for self-reported; `socialProfileUrl()` for all 13 platforms | Done love-button v2.10 |
+| E8 | **Popup: Trust Score display** — show creator trust score + achievement badges in the popup result | After Sprint B (trust score API needed) |
+| E9 | **Popup: Markdown embed badge** — second embed option alongside HTML badge, for GitHub READMEs | Sprint C |
+| E10 | **E5: RDD address detection in page content** — scan for `R[A-Za-z0-9]{33}` / `rdd1[a-z0-9]{39}`; context menu "Look up on ReddID" | Love Button v2.11 |
 
 ### Deployment & Production Readiness
 
@@ -166,6 +169,94 @@ These are not features but are required before any public launch announcement.
 | S13 | Chrome Web Store developer account confirmed | ❌ Needs check |
 | S14 | Firefox AMO developer account confirmed | ❌ Needs check |
 | S15 | Source code zip uploaded to AMO (required for MV3) | ❌ Not done |
+
+---
+
+---
+
+## Sprint Plan — Active (Post Strategy Review 2026-05-26)
+
+> Full cross-functional review findings documented in `docs/STRATEGY.md`.
+> Sprints are ordered by dependency. Sprint A must complete before Sprint B begins.
+
+### Sprint A — Production Foundation
+**Blocker sprint. Do not announce publicly until this is complete.**
+
+| # | Task | Status |
+|---|---|---|
+| A1 | `SqliteDataStore` — `better-sqlite3` implementation of DataStore interface; migration from db.json | [ ] |
+| A2 | `getStore()` factory: switches via `REDDID_DB_ENGINE=sqlite\|json` env var | [ ] |
+| A3 | SQLite-backed rate limiting: `rate_limit_counters` table replaces in-memory Map | [ ] |
+| A4 | `sanitize(s, maxLen)` utility; applied to all identity write paths (bio, displayName, website, usernames) | [ ] |
+| A5 | `editTokenExpiresAt` on Identity; edit API checks expiry; 1-year default on new registrations | [ ] |
+| A6 | Railway deployment config: `railway.json` + volume mount for `/app/data` | [ ] |
+| A7 | ISR on tip pages: `revalidate = 60` (remove `force-dynamic`); keep edit/verify/pay dynamic | [ ] |
+| A8 | OG image cache headers; Blockbook calls deduplicated per page render | [ ] |
+
+### Sprint B — Trust Score & Gamification
+**Goal: Every tip page communicates creator credibility at a glance.**
+
+| # | Task | Status |
+|---|---|---|
+| B1 | `computeTrustScore(identity)` → `{ score, max, breakdown }` in `src/lib/trustScore.ts` | [ ] |
+| B2 | Trust score bar + number on tip page with "How this works" tooltip | [ ] |
+| B3 | `computeBadges(identity)` → achievement badge list (Early Adopter, Multi-Social, Verified, etc.) | [ ] |
+| B4 | Achievement badges on tip page header | [ ] |
+| B5 | Trust score badge on /explore creator cards | [ ] |
+| B6 | Sort /explore by trust score (new default); add "Top Creators" leaderboard section | [ ] |
+| B7 | Staking tier (Micro/Staker/Senior/Whale) on staking calculator + tip page from live Blockbook balance | [ ] |
+| B8 | RecentTips: "Be the first to tip @handle!" empty state | [ ] |
+
+### Sprint C — Viral Growth Hooks
+**Goal: Every user action has a natural sharing moment.**
+
+| # | Task | Status |
+|---|---|---|
+| C1 | Post-registration sharing panel in `?new=1` banner: copy link + X/Bluesky pre-drafted share | [ ] |
+| C2 | Post-verification sharing: "Share your verified profile" card after successful proof submission | [ ] |
+| C3 | "Share Card" button on tip page → /card/[handle] link + copy | [ ] |
+| C4 | Embed: "Copy Markdown badge" option alongside HTML (for GitHub READMEs) | [ ] |
+| C5 | "Powered by ReddID" subtle footer on tip pages | [ ] |
+| C6 | "Notify me when @handle registers" on /not-found — email stored in `waitlist` SQLite table | [ ] |
+| C7 | Featured Creators section on homepage (top 3 by trust score or manually configured) | [ ] |
+| C8 | /explore "New This Week" section | [ ] |
+| C9 | `/about-redd` — non-technical ReddCoin explainer for newcomers from tip pages | [ ] |
+| C10 | Homepage copy: add non-crypto-user sentence + "Built for ReddHeads" community framing | [ ] |
+
+### Sprint D — Security Hardening & Store Submission
+**Goal: Extension in Chrome Web Store + Firefox AMO. Platform hardened.**
+
+| # | Task | Status |
+|---|---|---|
+| D1 | CORS headers on all API mutation routes via `src/middleware.ts` | [ ] |
+| D2 | CSP headers in `next.config.ts`: `default-src 'self'`; allowlist blockbook + coingecko + fonts | [ ] |
+| D3 | Server-side RDD address format validation in wallet linkage API | [ ] |
+| D4 | Reserved handle expansion: brand names, system paths, offensive words | [ ] |
+| D5 | Verify flow UX: numbered step indicator (Step 1/3), progress bar, "Copy challenge code" button | [ ] |
+| D6 | Mobile QR fix: `min-width: 200px` on tip page QR; sticky "Send RDD" CTA on mobile | [ ] |
+| D7 | `web-ext lint` 0 errors (S7) | [ ] |
+| D8 | Extension screenshots per store/screenshots.md spec (S8) | [ ] |
+| D9 | 1280×800 promotional tile (S9) | [ ] |
+| D10 | TESTING.md full pass on Chrome latest (S10) | [ ] |
+| D11 | TESTING.md full pass on Firefox latest + ESR (S11, S12) | [ ] |
+| D12 | Chrome Web Store submission (S13) | [ ] |
+| D13 | Firefox AMO submission + source zip (S14, S15) | [ ] |
+
+### Sprint E — Analytics & Advanced Verification
+**Goal: Understand what's working. Social proofs carry real trust weight.**
+
+| # | Task | Status |
+|---|---|---|
+| E1 | Profile analytics on edit page: tip count + biggest tip from Blockbook | [ ] |
+| E2 | Tip count + last-tip date public display on tip page | [ ] |
+| E3 | Privacy-preserving analytics (Plausible or Umami) integration | [ ] |
+| E4 | Discord webhook on new registration → #new-creators | [ ] |
+| E5 | Social proof bio-matching: auto-upgrade proof status if ReddID handle found in platform bio | [ ] |
+| E6 | Wallet signature verification via reddcoinjs-lib (`verifymessage`) | [ ] |
+| E7 | `GET /api/identities/[handle]/export` — data export with editToken | [ ] |
+| E8 | `DELETE /api/identities/[handle]` — soft-delete account with editToken | [ ] |
+| E9 | Referral tracking: `referredBy` field; set from `?ref=handle` at registration | [ ] |
+| E10 | Referral leaderboard on /explore | [ ] |
 
 ---
 
