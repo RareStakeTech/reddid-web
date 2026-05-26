@@ -1,6 +1,6 @@
 # ReddWeb Roadmap
 
-**Last updated:** 2026-05-25
+**Last updated:** 2026-05-25 (v0.4.7)
 
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
@@ -110,11 +110,11 @@ This roadmap reflects the current implementation plan. It is a working document 
 
 | # | Item | Affected file(s) | Why it matters |
 |---|------|-----------------|---------------|
-| U16 | **Handle search results page** — `/search?q=` client page using `/api/search`; shows ranked results with handle, name, bio snippet, platform badges | `src/app/search/page.tsx` | Currently /explore does local client-side filter only; /api/search scores across more fields |
+| U16 | ✅ **Handle search results page** — `/search?q=` client page using `/api/search`; ranked results with handle, name, bio snippet (120 chars), platform badges with verified colour coding | `src/app/search/page.tsx` + `SearchClient.tsx` | Done v0.4.7 |
 | U17 | **Profile completion indicator** — small progress strip on the edit page showing: handle ✓, RDD address ✓, display name, bio, website, ≥1 social proof, ≥1 verified social proof | `src/app/edit/[handle]/page.tsx` | Guides creators toward a more complete profile without being nagging |
 | U18 | **`/explore` load-more / pagination** — "Load more" button after 20 results instead of rendering all at once | `src/app/explore/page.tsx` | Will matter as the directory grows; prevents long initial render |
-| U19 | **Homepage — recent registrations widget** — a horizontal scroll row showing the last 5 registered handles (avatar placeholder, handle, platform count) fetched from `/api/explore` | `src/app/page.tsx` | Makes the homepage feel alive; social proof that people are using the service |
-| U20 | **`/card/[handle]` — QR download** — "Download card as image" using `html-to-image` or canvas; downloads a PNG of the full tip card | `src/app/card/[handle]/page.tsx` | Very useful for creators putting their tip card in social media bios, stream overlays, video descriptions |
+| U19 | ✅ **Homepage — recent registrations widget** — horizontal scroll row showing last 5 registered handles; handle, display name, platform icons; server-side from `getAllIdentities()`; "View all →" link to /explore | `src/app/page.tsx` | Done v0.4.7 |
+| U20 | ✅ **`/card/[handle]` — QR download** — "Save QR as PNG" button via XMLSerializer → Canvas 512×512, same approach as U12; `CardClientButtons.tsx` client component also fixes the `onClick`-in-server-component bug | `src/app/card/[handle]/CardClientButtons.tsx` | Done v0.4.7 |
 
 ### Extension-side UX (Love Button v2.6 targets)
 

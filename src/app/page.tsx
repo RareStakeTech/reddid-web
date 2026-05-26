@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AtSign, Zap, Link2, Bot, Scale } from 'lucide-react';
-import { countIdentities } from '@/lib/db';
+import { countIdentities, getAllIdentities } from '@/lib/db';
+import { PLATFORM_MAP } from '@/lib/platforms';
 import CountUp from '@/components/CountUp';
 import MarketTicker from '@/components/MarketTicker';
 
@@ -56,6 +57,10 @@ const FEATURES = [
 
 export default async function HomePage() {
   const identityCount = countIdentities();
+  const allIdentities = getAllIdentities();
+  const recentHandles = [...allIdentities]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '60px 20px' }}>
@@ -220,6 +225,106 @@ export default async function HomePage() {
           ReddRail (high-throughput social-payment channels) integrates once Gajumaru Associate Chain tooling is available.
         </p>
       </div>
+
+      {/* U19 — Recent registrations horizontal scroll row */}
+      {recentHandles.length > 0 && (
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h2 style={{
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              fontFamily: "'Rubik', sans-serif",
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--text-dim)',
+            }}>
+              Recently registered
+            </h2>
+            <Link
+              href="/explore"
+              style={{
+                fontSize: '0.78rem',
+                color: 'var(--redd-red)',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontFamily: "'Rubik', sans-serif",
+              }}
+            >
+              View all →
+            </Link>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+            {recentHandles.map(id => (
+              <Link
+                key={id.handle}
+                href={`/${id.handle}`}
+                style={{ textDecoration: 'none', flexShrink: 0 }}
+              >
+                <div
+                  className="recent-handle-card"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '14px 16px',
+                    width: 168,
+                  }}
+                >
+                  <div style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    color: 'var(--redd-red)',
+                    letterSpacing: '0.07em',
+                    marginBottom: 4,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    @{id.handle}
+                  </div>
+                  <div style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    fontFamily: "'Rubik', sans-serif",
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.25,
+                    marginBottom: 10,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {id.displayName ?? id.handle}
+                  </div>
+                  <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                    {id.socialProofs.slice(0, 5).map(p => (
+                      <span
+                        key={p.platform}
+                        title={PLATFORM_MAP[p.platform]?.name ?? p.platform}
+                        style={{
+                          fontSize: '0.62rem',
+                          color: 'var(--text-dim)',
+                          background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 3,
+                          padding: '1px 5px',
+                        }}
+                      >
+                        {PLATFORM_MAP[p.platform]?.icon ?? '🔗'}
+                      </span>
+                    ))}
+                    {id.socialProofs.length === 0 && (
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>no links yet</span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <style>{`.recent-handle-card { transition: border-color 0.15s; } .recent-handle-card:hover { border-color: rgba(227,6,19,0.4) !important; }`}</style>
+        </div>
+      )}
 
       {/* Quick links */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

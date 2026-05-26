@@ -18,6 +18,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.7] — 2026-05-25
+
+### Added
+- **`/search` page — ranked handle search** (U16) — new `src/app/search/page.tsx` (server wrapper) + `src/app/search/SearchClient.tsx` (client); reads initial query from `?q=` URL parameter; 350 ms debounced live search against `/api/search`; results show handle, display name, bio snippet (120 chars), and platform badges colour-coded by verification status (green = verified ✓); "no results" state offers a register link pre-filled with the typed handle; URL updated via `router.replace` on each keystroke (no history pollution); wrapped in `<Suspense>` boundary per Next.js App Router requirement for `useSearchParams`
+- **`/card/[handle]/CardClientButtons.tsx`** (U20) — extracted all client-side card actions into a dedicated `'use client'` component; receives `handle`, `addr`, `pageUrl`, `bip21` as props from the server page; renders print button (`window.print()`), new "Save QR as PNG" download button (same XMLSerializer → Canvas 512×512 approach as U12, filename `reddid-{handle}-card-qr.png`), ShareButton, and CopyButton; hidden `<QRCode>` rendered off-screen for canvas capture
+
+### Changed
+- **`page.tsx` (homepage)** (U19) — "Recently registered" horizontal scroll row added above the quick-links section; server-side: fetches all identities, sorts newest-first, takes top 5; each card shows handle (truncated), display name (truncated), and platform icons (up to 5); "View all →" link to `/explore`; hover border highlight via injected CSS class `.recent-handle-card:hover`
+- **`card/[handle]/page.tsx`** (U20) — replaced inline `onClick={() => window.print()}` button and `ShareButton`/`CopyButton` with `<CardClientButtons>` client component; fixes invalid event-handler-in-server-component bug; removed unused `ShareButton` and `CopyButton` direct imports from the server page
+- **`not-found.tsx`** — "Search the ReddID directory" link now points to `/search` instead of `/explore`
+- **`components/QuickLookup.tsx`** — submit handler falls back to `/search?q=` for multi-word queries; single-word queries continue to navigate directly to `/{handle}`
+
+---
+
 ## [0.4.6] — 2026-05-26
 
 ### Changed

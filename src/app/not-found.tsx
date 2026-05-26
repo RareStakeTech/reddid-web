@@ -95,7 +95,7 @@ export default function NotFound() {
       {/* Quick search hint */}
       <p style={{ color: 'var(--text-dim)', fontSize: '0.78rem' }}>
         Looking for someone?{' '}
-        <Link href="/explore" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+        <Link href="/search" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
           Search the ReddID directory →
         </Link>
       </p>

@@ -14,7 +14,12 @@ export default function QuickLookup() {
     e.preventDefault();
     const handle = value.trim().replace(/^@/, '').toLowerCase();
     if (!handle) return;
-    router.push(`/${handle}`);
+    // Single-word lookup → go direct; anything with spaces → search page
+    if (handle.includes(' ') || handle.length < 1) {
+      router.push(`/search?q=${encodeURIComponent(handle)}`);
+    } else {
+      router.push(`/${handle}`);
+    }
     setValue('');
     inputRef.current?.blur();
   }

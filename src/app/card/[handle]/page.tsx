@@ -4,8 +4,7 @@ import { getIdentityByHandle } from '@/lib/db';
 import { buildBip21Uri, getAddressType } from '@/lib/validation';
 import { primaryRddAddress } from '@/lib/types';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
-import ShareButton from '@/components/ShareButton';
-import CopyButton from '@/components/CopyButton';
+import CardClientButtons from './CardClientButtons';
 
 interface Props {
   params: Promise<{ handle: string }>;
@@ -151,22 +150,13 @@ export default async function CardPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Action buttons (no-print) */}
-        <div className="no-print" style={{ marginTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button
-            onClick={() => window.print()}
-            style={{
-              background: '#1a1a1a', border: '1px solid var(--border)',
-              color: 'var(--text-muted)', fontFamily: "'Rubik', sans-serif",
-              fontWeight: 600, fontSize: '0.82rem',
-              padding: '9px 18px', borderRadius: 8, cursor: 'pointer',
-            }}
-          >
-            🖨 Print / Save PDF
-          </button>
-          <ShareButton url={pageUrl} title={`Tip @${identity.handle} with Ɍ RDD`} />
-          <CopyButton text={addr} label="Copy address" />
-        </div>
+        {/* U20 — Action buttons: print, save QR, share, copy (client component) */}
+        <CardClientButtons
+          handle={identity.handle}
+          addr={addr}
+          pageUrl={pageUrl}
+          bip21={bip21}
+        />
 
         <div className="no-print" style={{ marginTop: 20, fontSize: '0.78rem', color: 'var(--text-dim)', textAlign: 'center' }}>
           <a href={`/${identity.handle}`} style={{ color: 'var(--text-dim)', textDecoration: 'none' }}>
