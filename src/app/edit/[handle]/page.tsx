@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, AlertCircle, Loader2, ShieldCheck, Clock, ExternalLink, Plus, CreditCard, Trash2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, ShieldCheck, Clock, ExternalLink, Plus, CreditCard, Trash2, RefreshCw } from 'lucide-react';
 import { PLATFORM_MAP, platformProfileUrl } from '@/lib/platforms';
 
 interface PageProps {
@@ -35,14 +35,18 @@ interface IdentityPublic {
   socialProofs: SocialProofPublic[];
 }
 
-function StatusBadge({ status }: { status?: string }) {
+function StatusBadge({ status, proofMethod }: { status?: string; proofMethod?: string }) {
   const s = status ?? 'pending';
   const map: Record<string, { label: string; color: string; bg: string; border: string; Icon: typeof ShieldCheck }> = {
-    verified: { label: 'Verified ✓', color: '#4ade80', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.25)', Icon: ShieldCheck },
-    pending:  { label: 'Self-reported', color: 'var(--text-dim)', bg: 'rgba(255,255,255,0.04)', border: 'var(--border)', Icon: Clock },
-    failed:   { label: 'Failed', color: '#f87171', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', Icon: AlertCircle },
+    verified:        { label: 'Verified ✓', color: '#4ade80', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.25)', Icon: ShieldCheck },
+    'url-verified':  { label: 'URL Verified ✓✓', color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.3)', Icon: ShieldCheck },
+    pending:         { label: 'Self-reported', color: 'var(--text-dim)', bg: 'rgba(255,255,255,0.04)', border: 'var(--border)', Icon: Clock },
+    failed:          { label: 'Failed ✗', color: '#f87171', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', Icon: AlertCircle },
+    expired:         { label: 'Challenge Expired', color: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.25)', Icon: Clock },
   };
-  const cfg = map[s] ?? map.pending;
+  // Distinguish url-fetch-verified from trust-based verified
+  const key = s === 'verified' && proofMethod === 'url-fetch-verified' ? 'url-verified' : s;
+  const cfg = map[key] ?? map.pending;
   const Icon = cfg.Icon;
   return (
     <span
@@ -163,6 +167,12 @@ export default function EditPage({ params }: PageProps) {
   const [saved, setSaved]              = useState(false);
   const [saveError, setSaveError]      = useState('');
 
+  // Token-expiry recovery state
+  const [tokenExpired, setTokenExpired]       = useState(false);
+  const [reissuingToken, setReissuingToken]   = useState(false);
+  const [reissueError, setReissueError]       = useState('');
+  const [reissueSuccess, setReissueSuccess]   = useState(false);
+
   // Wallet management state
   const [walletAddress, setWalletAddress]     = useState('');
   const [walletLabel, setWalletLabel]         = useState('');
@@ -171,6 +181,10 @@ export default function EditPage({ params }: PageProps) {
   const [walletError, setWalletError]         = useState('');
   const [removingWalletId, setRemovingWalletId]   = useState<string | null>(null);
   const [settingPrimaryId, setSettingPrimaryId]   = useState<string | null>(null);
+
+  // Social proof management state
+  const [removingSocialPlatform, setRemovingSocialPlatform] = useState<string | null>(null);
+  const [socialRemoveError, setSocialRemoveError]           = useState('');
 
   useEffect(() => {
     const stored = localStorage.getItem(`reddid_edittoken_${handle}`);
@@ -209,7 +223,11 @@ export default function EditPage({ params }: PageProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setSaveError(data.error ?? 'Update failed.');
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setSaveError(data.error ?? 'Update failed.');
+        }
       } else {
         setIdentity(data.identity);
         setSaved(true);
@@ -228,6 +246,35 @@ export default function EditPage({ params }: PageProps) {
       const data = await res.json();
       if (data.identity) setIdentity(data.identity);
     } catch { /* silent */ }
+  }
+
+  async function handleReissueToken() {
+    setReissuingToken(true);
+    setReissueError('');
+    try {
+      const res = await fetch(`/api/identities/${handle}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editToken: editToken.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReissueError(data.error ?? 'Failed to reissue token.');
+      } else {
+        const newToken: string = data.editToken;
+        setEditToken(newToken);
+        localStorage.setItem(`reddid_edittoken_${handle}`, newToken);
+        setTokenExpired(false);
+        setSaveError('');
+        setWalletError('');
+        setReissueSuccess(true);
+        setTimeout(() => setReissueSuccess(false), 4000);
+      }
+    } catch {
+      setReissueError('Network error. Please try again.');
+    } finally {
+      setReissuingToken(false);
+    }
   }
 
   async function handleAddWallet() {
@@ -254,7 +301,11 @@ export default function EditPage({ params }: PageProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setWalletError(data.error ?? 'Failed to add wallet.');
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setWalletError(data.error ?? 'Failed to add wallet.');
+        }
       } else {
         setWalletAdded(true);
         setWalletAddress('');
@@ -281,7 +332,11 @@ export default function EditPage({ params }: PageProps) {
       });
       if (!res.ok) {
         const data = await res.json();
-        setWalletError(data.error ?? 'Failed to set primary wallet.');
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setWalletError(data.error ?? 'Failed to set primary wallet.');
+        }
       } else {
         await refreshIdentity();
       }
@@ -304,7 +359,11 @@ export default function EditPage({ params }: PageProps) {
       });
       if (!res.ok) {
         const data = await res.json();
-        setWalletError(data.error ?? 'Failed to remove wallet.');
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setWalletError(data.error ?? 'Failed to remove wallet.');
+        }
       } else {
         await refreshIdentity();
       }
@@ -312,6 +371,34 @@ export default function EditPage({ params }: PageProps) {
       setWalletError('Network error. Please try again.');
     } finally {
       setRemovingWalletId(null);
+    }
+  }
+
+  async function handleRemoveSocialProof(platform: string) {
+    if (!editToken.trim()) { setSocialRemoveError('Edit token is required.'); return; }
+    if (!window.confirm(`Remove your ${platform} social account link? This cannot be undone — you will need to re-verify to restore it.`)) return;
+    setRemovingSocialPlatform(platform);
+    setSocialRemoveError('');
+    try {
+      const res = await fetch(`/api/identities/${handle}/socials/${platform}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editToken: editToken.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setSocialRemoveError(data.error ?? 'Failed to remove social proof.');
+        }
+      } else {
+        await refreshIdentity();
+      }
+    } catch {
+      setSocialRemoveError('Network error. Please try again.');
+    } finally {
+      setRemovingSocialPlatform(null);
     }
   }
 
@@ -411,6 +498,56 @@ export default function EditPage({ params }: PageProps) {
             bio={bio}
             website={website}
           />
+        )}
+
+        {/* Token-expiry recovery panel */}
+        {tokenExpired && (
+          <div style={{ padding: '16px 32px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={15} style={{ color: '#fbbf24', flexShrink: 0 }} />
+                <span style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: 700 }}>Edit token has expired</span>
+              </div>
+              <p style={{ color: 'rgba(251,191,36,0.7)', fontSize: '0.78rem', margin: 0, lineHeight: 1.55 }}>
+                Tokens expire after 30 days for security. Click below to reissue a fresh token — your browser will be updated automatically.
+              </p>
+              {reissueError && (
+                <p style={{ color: '#f87171', fontSize: '0.75rem', margin: 0 }}>{reissueError}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleReissueToken}
+                disabled={reissuingToken || !editToken.trim()}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: reissuingToken ? 'rgba(251,191,36,0.4)' : '#fbbf24',
+                  color: '#1a0808',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '7px 16px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  fontFamily: "'Rubik', sans-serif",
+                  cursor: reissuingToken || !editToken.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {reissuingToken
+                  ? <><Loader2 size={13} style={{ animation: 'spin 0.8s linear infinite' }} /> Reissuing…</>
+                  : <><RefreshCw size={13} /> Reissue token</>}
+              </button>
+            </div>
+          </div>
+        )}
+        {reissueSuccess && (
+          <div style={{ padding: '12px 32px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.28)', borderRadius: 7, padding: '10px 14px', color: '#4ade80', fontSize: '0.82rem', display: 'flex', gap: 8, alignItems: 'center' }}>
+              <CheckCircle2 size={15} />
+              Token reissued successfully — your browser is updated. Try saving again.
+            </div>
+          </div>
         )}
 
         {/* Profile form */}
@@ -746,26 +883,34 @@ export default function EditPage({ params }: PageProps) {
                     </div>
 
                     {/* Status badge */}
-                    <StatusBadge status={proof.verificationStatus} />
+                    <StatusBadge status={proof.verificationStatus} proofMethod={proof.proofMethod} />
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       {proof.verificationStatus !== 'verified' && (
                         <Link
-                          href={`/verify?handle=${handle}&platform=${proof.platform}`}
+                          href={`/verify?handle=${handle}&platform=${proof.platform}&username=${encodeURIComponent(proof.username)}`}
                           style={{
                             fontSize: '0.72rem',
                             fontWeight: 700,
-                            color: 'var(--redd-red)',
+                            color: (proof.verificationStatus === 'expired' || proof.verificationStatus === 'failed')
+                              ? '#fb923c'
+                              : 'var(--redd-red)',
                             textDecoration: 'none',
                             fontFamily: "'Rubik', sans-serif",
-                            background: 'rgba(227,6,19,0.08)',
-                            border: '1px solid rgba(227,6,19,0.2)',
+                            background: (proof.verificationStatus === 'expired' || proof.verificationStatus === 'failed')
+                              ? 'rgba(251,146,60,0.08)'
+                              : 'rgba(227,6,19,0.08)',
+                            border: `1px solid ${(proof.verificationStatus === 'expired' || proof.verificationStatus === 'failed')
+                              ? 'rgba(251,146,60,0.25)'
+                              : 'rgba(227,6,19,0.2)'}`,
                             borderRadius: 5,
                             padding: '3px 9px',
                           }}
                         >
-                          Verify →
+                          {(proof.verificationStatus === 'expired' || proof.verificationStatus === 'failed')
+                            ? 'Re-verify →'
+                            : 'Verify →'}
                         </Link>
                       )}
                       {profileUrl && (
@@ -779,10 +924,42 @@ export default function EditPage({ params }: PageProps) {
                           <ExternalLink size={13} />
                         </a>
                       )}
+                      {/* Remove */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSocialProof(proof.platform)}
+                        disabled={removingSocialPlatform === proof.platform}
+                        title="Remove this social account"
+                        style={{
+                          background: 'none',
+                          border: '1px solid var(--border)',
+                          borderRadius: 5,
+                          color: 'var(--text-dim)',
+                          cursor: removingSocialPlatform === proof.platform ? 'not-allowed' : 'pointer',
+                          padding: '4px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          fontSize: '0.72rem',
+                          flexShrink: 0,
+                          transition: 'all 0.12s',
+                        }}
+                      >
+                        {removingSocialPlatform === proof.platform
+                          ? <Loader2 size={11} style={{ animation: 'spin 0.8s linear infinite' }} />
+                          : <Trash2 size={11} />}
+                      </button>
                     </div>
                   </div>
                 );
               })}
+
+              {/* Social remove error */}
+              {socialRemoveError && (
+                <div style={{ margin: '0 32px 8px', background: 'rgba(227,6,19,0.08)', border: '1px solid rgba(227,6,19,0.28)', borderRadius: 7, padding: '8px 12px', color: '#f87171', fontSize: '0.78rem', display: 'flex', gap: 7, alignItems: 'center' }}>
+                  <AlertCircle size={13} />
+                  {socialRemoveError}
+                </div>
+              )}
 
               {/* Add another */}
               <div style={{ padding: '12px 32px' }}>

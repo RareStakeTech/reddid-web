@@ -140,43 +140,101 @@ export default async function TipPage({ params, searchParams }: Props) {
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 20px' }}>
 
-      {/* New registration success banner */}
+      {/* New registration onboarding guide */}
       {isNew === '1' && (
         <div
           style={{
-            background: 'rgba(34,197,94,0.08)',
+            background: 'rgba(34,197,94,0.06)',
             border: '1px solid rgba(34,197,94,0.28)',
-            borderRadius: 10,
-            padding: '14px 20px',
+            borderRadius: 12,
+            padding: '20px 24px',
             marginBottom: 28,
-            color: '#4ade80',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
           }}
         >
-          <CheckCircle2 size={18} />
-          <span style={{ flex: 1 }}>
-            <strong>@{identity.handle}</strong> registered successfully! This is your public tip page —
-            share the URL to receive Ɍ RDD tips.
-          </span>
-          <Link
-            href={`/verify?handle=${identity.handle}`}
-            style={{
-              color: '#4ade80',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              fontFamily: "'Rubik', sans-serif",
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-              borderBottom: '1px solid rgba(74,222,128,0.4)',
-              paddingBottom: 1,
-            }}
-          >
-            Verify social accounts →
-          </Link>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <CheckCircle2 size={18} style={{ color: '#4ade80', flexShrink: 0 }} />
+            <span style={{ color: '#4ade80', fontSize: '0.95rem', fontWeight: 700, fontFamily: "'Rubik', sans-serif" }}>
+              @{identity.handle} is live! 🎉
+            </span>
+          </div>
+
+          {/* 3-step guide */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+            {/* Step 1 — done */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                <CheckCircle2 size={12} style={{ color: '#4ade80' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#4ade80', fontFamily: "'Rubik', sans-serif" }}>
+                  Tip page live
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(74,222,128,0.65)', lineHeight: 1.5 }}>
+                  Your page is at{' '}
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>redd.love/@{identity.handle}</span>
+                  {' '}— share it anywhere.
+                </div>
+              </div>
+            </div>
+
+            {/* Connector */}
+            <div style={{ marginLeft: 10, width: 2, height: 6, background: 'rgba(74,222,128,0.2)', borderRadius: 1 }} />
+
+            {/* Step 2 — next action */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(227,6,19,0.1)', border: '1px solid rgba(227,6,19,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--redd-red)', fontFamily: "'Rubik', sans-serif" }}>2</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', fontFamily: "'Rubik', sans-serif" }}>
+                  Link your social accounts
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 6 }}>
+                  Post a challenge code to your Twitter, YouTube, GitHub, etc. to earn a ✓ badge.
+                </div>
+                <Link
+                  href={`/verify?handle=${identity.handle}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    fontFamily: "'Rubik', sans-serif",
+                    color: 'var(--redd-red)',
+                    textDecoration: 'none',
+                    background: 'rgba(227,6,19,0.06)',
+                    border: '1px solid rgba(227,6,19,0.2)',
+                    borderRadius: 5,
+                    padding: '4px 12px',
+                    gap: 5,
+                  }}
+                >
+                  Verify accounts →
+                </Link>
+              </div>
+            </div>
+
+            {/* Connector */}
+            <div style={{ marginLeft: 10, width: 2, height: 6, background: 'rgba(255,255,255,0.07)', borderRadius: 1 }} />
+
+            {/* Step 3 — share */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', fontFamily: "'Rubik', sans-serif" }}>3</span>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: "'Rubik', sans-serif" }}>
+                  Share your handle
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+                  Add your redd.love link to your social bios, YouTube description, and anywhere fans can find you.
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
 
@@ -264,11 +322,15 @@ export default async function TipPage({ params, searchParams }: Props) {
                     </a>
                   )}
                   {identity.socialProofs.map(proof => {
-                    // Map verification status → trust level for display
+                    // Map proofMethod + verificationStatus → TrustLevel for display.
+                    // 'url-fetch-verified' proofMethod = server confirmed the URL (S3-01/S3-03).
+                    // 'challenge-post' = trust-based acceptance only.
                     const tl: TrustLevel =
-                      proof.verificationStatus === 'verified'
-                        ? 'challenge-post-verified'
-                        : 'self-reported';
+                      proof.verificationStatus !== 'verified'
+                        ? 'self-reported'
+                        : proof.proofMethod === 'url-fetch-verified'
+                          ? 'url-fetch-verified'
+                          : 'challenge-post-verified';
                     const profileUrl = platformProfileUrl(proof.platform, proof.username);
                     const badge = (
                       <PlatformBadge
@@ -455,6 +517,25 @@ export default async function TipPage({ params, searchParams }: Props) {
             </Link>
           </div>
         )}
+
+        {/* Embed badge snippet */}
+        <div
+          style={{
+            padding: '14px 32px',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Embed badge
+          </div>
+          <CopyButton
+            text={`[![Tip @${identity.handle} with Ɍ RDD](https://redd.love/api/badge/${identity.handle})](https://redd.love/@${identity.handle})`}
+            label="Copy Markdown"
+          />
+          <p style={{ marginTop: 6, fontSize: '0.7rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+            Drop this into any README or website to show a clickable Ɍ RDD tip badge.
+          </p>
+        </div>
 
         {/* Card footer */}
         <div

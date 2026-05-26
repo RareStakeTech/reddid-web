@@ -2,6 +2,15 @@
 
 **Last updated:** 2026-05-26 (v0.4.17 — post strategy review)
 
+> ⚠️ **SPRINT PLAN AUTHORITY NOTE (2026-05-26)**
+>
+> The lettered sprint plan in this file (Sprints A–E) is **superseded** by `docs/SPRINT_PLAN.md` (numbered Sprints 0–6).
+> `SPRINT_PLAN.md` is the **authoritative working document** for all active sprint work.
+>
+> **Do not implement from the lettered sprints below.** They contain stale items (e.g. Sprint E7/E8 are already done in Sprint 1) and a leaderboard item in Sprint B6 that was **explicitly rejected** by the gamification rules in SPRINT_PLAN.md.
+>
+> The historical milestone sections (v0.3, v0.4), UX backlog (U1–U20), extension UX (E1–E10), Deployment checklist (D1–D8), and store submission checklist (S1–S15) below remain useful reference material.
+
 This roadmap reflects the current implementation plan. It is a working document — not a marketing promise.
 
 ---

@@ -29,12 +29,12 @@ function writeRevocationEvent(event: RevocationEvent): void {
   let db: DbSchema;
   try {
     if (!fs.existsSync(DB_PATH)) {
-      db = { identities: [], revocationEvents: [], version: 1 };
+      db = { identities: [], revocationEvents: [], abuseReports: [], version: 1 };
     } else {
       db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) as DbSchema;
     }
   } catch {
-    db = { identities: [], revocationEvents: [], version: 1 };
+    db = { identities: [], revocationEvents: [], abuseReports: [], version: 1 };
   }
   if (!db.revocationEvents) db.revocationEvents = [];
   db.revocationEvents.push(event);

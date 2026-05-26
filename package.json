@@ -1,6 +1,6 @@
 {
   "name": "reddid-web",
-  "version": "0.4.19",
+  "version": "0.4.26",
   "private": true,
   "scripts": {
     "dev": "next dev",

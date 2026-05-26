@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, AlertCircle, Loader2, Copy, Check } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, Copy, Check, RefreshCw } from 'lucide-react';
 import { Suspense } from 'react';
 import { LIVE_PLATFORMS } from '@/lib/platforms';
 
@@ -30,7 +30,7 @@ function VerifyForm() {
   const [handle, setHandle]       = useState(searchParams.get('handle') ?? '');
   const [platform, setPlatform]   = useState(searchParams.get('platform') ?? '');
   const [editToken, setEditToken] = useState('');
-  const [username, setUsername]   = useState('');
+  const [username, setUsername]   = useState(searchParams.get('username') ?? '');
   const [proofUrl, setProofUrl]   = useState('');
 
   const [step, setStep]           = useState<'form' | 'challenge' | 'confirm' | 'done'>('form');
@@ -39,12 +39,42 @@ function VerifyForm() {
   const [error, setError]         = useState('');
   const [copied, setCopied]       = useState(false);
 
+  const [tokenExpired, setTokenExpired]       = useState(false);
+  const [reissuingToken, setReissuingToken]   = useState(false);
+  const [reissueError, setReissueError]       = useState('');
+
   useEffect(() => {
     if (handle) {
       const stored = localStorage.getItem(`reddid_edittoken_${handle}`);
       if (stored) setEditToken(stored);
     }
   }, [handle]);
+
+  async function handleReissueToken() {
+    setReissuingToken(true);
+    setReissueError('');
+    try {
+      const res = await fetch(`/api/identities/${handle}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReissueError(data.error ?? 'Failed to reissue token.');
+      } else {
+        const newToken: string = data.editToken;
+        setEditToken(newToken);
+        localStorage.setItem(`reddid_edittoken_${handle}`, newToken);
+        setTokenExpired(false);
+        setError('');
+      }
+    } catch {
+      setReissueError('Network error. Please try again.');
+    } finally {
+      setReissuingToken(false);
+    }
+  }
 
   async function requestChallenge() {
     setLoading(true);
@@ -56,7 +86,14 @@ function VerifyForm() {
         body: JSON.stringify({ handle, platform, editToken }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Failed.'); return; }
+      if (!res.ok) {
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setError(data.error ?? 'Failed.');
+        }
+        return;
+      }
       setChallenge(data.challenge);
       setStep('challenge');
     } catch { setError('Network error.'); }
@@ -73,7 +110,14 @@ function VerifyForm() {
         body: JSON.stringify({ handle, platform, username, proofUrl, editToken }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Failed.'); return; }
+      if (!res.ok) {
+        if (res.status === 401 && (data.error ?? '').includes('expired')) {
+          setTokenExpired(true);
+        } else {
+          setError(data.error ?? 'Failed.');
+        }
+        return;
+      }
       setStep('done');
     } catch { setError('Network error.'); }
     finally   { setLoading(false); }
@@ -172,6 +216,42 @@ function VerifyForm() {
                   <AlertCircle size={14} />{error}
                 </div>
               )}
+              {tokenExpired && (
+                <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)', borderRadius: 7, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#fbbf24', fontSize: '0.82rem', fontWeight: 700 }}>
+                    <AlertCircle size={14} />
+                    Edit token has expired
+                  </div>
+                  <p style={{ color: 'rgba(251,191,36,0.65)', fontSize: '0.75rem', margin: 0, lineHeight: 1.5 }}>
+                    Tokens expire after 30 days. Reissue to continue.
+                  </p>
+                  {reissueError && <p style={{ color: '#f87171', fontSize: '0.75rem', margin: 0 }}>{reissueError}</p>}
+                  <button
+                    type="button"
+                    onClick={handleReissueToken}
+                    disabled={reissuingToken || !editToken.trim()}
+                    style={{
+                      alignSelf: 'flex-start',
+                      background: reissuingToken ? 'rgba(251,191,36,0.4)' : '#fbbf24',
+                      color: '#1a0808',
+                      border: 'none',
+                      borderRadius: 5,
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      fontFamily: "'Rubik', sans-serif",
+                      cursor: reissuingToken || !editToken.trim() ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    {reissuingToken
+                      ? <><Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> Reissuing…</>
+                      : <><RefreshCw size={12} /> Reissue token</>}
+                  </button>
+                </div>
+              )}
               <button
                 onClick={requestChallenge}
                 disabled={loading || !handle || !platform || !editToken}
@@ -225,6 +305,42 @@ function VerifyForm() {
               {error && (
                 <div style={{ background: 'rgba(227,6,19,0.08)', border: '1px solid rgba(227,6,19,0.28)', borderRadius: 7, padding: '9px 12px', color: '#f87171', fontSize: '0.82rem', display: 'flex', gap: 7, alignItems: 'center' }}>
                   <AlertCircle size={14} />{error}
+                </div>
+              )}
+              {tokenExpired && (
+                <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)', borderRadius: 7, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#fbbf24', fontSize: '0.82rem', fontWeight: 700 }}>
+                    <AlertCircle size={14} />
+                    Edit token has expired
+                  </div>
+                  <p style={{ color: 'rgba(251,191,36,0.65)', fontSize: '0.75rem', margin: 0, lineHeight: 1.5 }}>
+                    Reissue your token — the challenge code above is still valid and can be submitted after.
+                  </p>
+                  {reissueError && <p style={{ color: '#f87171', fontSize: '0.75rem', margin: 0 }}>{reissueError}</p>}
+                  <button
+                    type="button"
+                    onClick={handleReissueToken}
+                    disabled={reissuingToken || !editToken.trim()}
+                    style={{
+                      alignSelf: 'flex-start',
+                      background: reissuingToken ? 'rgba(251,191,36,0.4)' : '#fbbf24',
+                      color: '#1a0808',
+                      border: 'none',
+                      borderRadius: 5,
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      fontFamily: "'Rubik', sans-serif",
+                      cursor: reissuingToken || !editToken.trim() ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    {reissuingToken
+                      ? <><Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> Reissuing…</>
+                      : <><RefreshCw size={12} /> Reissue token</>}
+                  </button>
                 </div>
               )}
 

@@ -9,7 +9,7 @@ interface PublicIdentity {
   handle: string;
   displayName: string | null;
   bio: string | null;
-  socialProofs: { platform: string; username: string }[];
+  socialProofs: { platform: string; username: string; verificationStatus?: string }[];
   createdAt: string;
 }
 
@@ -27,7 +27,7 @@ export default function ExplorePage() {
   const [loading, setLoading]       = useState(true);
   const [query, setQuery]           = useState('');
   const [platform, setPlatform]     = useState('');
-  const [sort, setSort]             = useState<'newest' | 'alpha'>('newest');
+  const [sort, setSort]             = useState<'newest' | 'alpha' | 'verified'>('newest');
   // U18 — load-more pagination
   const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
 
@@ -57,6 +57,13 @@ export default function ExplorePage() {
     }
     if (sort === 'alpha') {
       list = [...list].sort((a, b) => a.handle.localeCompare(b.handle));
+    } else if (sort === 'verified') {
+      // Sort by number of verified social proofs, descending
+      list = [...list].sort((a, b) => {
+        const countVerified = (i: PublicIdentity) =>
+          i.socialProofs.filter(p => p.verificationStatus === 'verified').length;
+        return countVerified(b) - countVerified(a);
+      });
     }
     // newest first is default from API
     return list;
@@ -112,11 +119,12 @@ export default function ExplorePage() {
         {/* Sort */}
         <select
           value={sort}
-          onChange={e => setSort(e.target.value as 'newest' | 'alpha')}
+          onChange={e => setSort(e.target.value as 'newest' | 'alpha' | 'verified')}
           style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.82rem', padding: '10px 12px', cursor: 'pointer', outline: 'none' }}
         >
           <option value="newest">Newest first</option>
           <option value="alpha">A → Z</option>
+          <option value="verified">Most verified</option>
         </select>
       </div>
 

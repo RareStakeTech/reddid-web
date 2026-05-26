@@ -79,13 +79,15 @@ export async function POST(request: NextRequest) {
 
   // Create
   try {
-    let identity = createIdentity({
+    const { identity: baseIdentity, revocationKeyPlaintext } = createIdentity({
       handle: handleClean,
       displayName: displayName || undefined,
       rddAddress,
       bio: bio || undefined,
       website: website || undefined,
     });
+
+    let identity = baseIdentity;
 
     // Attach any social links provided at registration (self-reported, no verification required)
     for (const link of socialLinks) {
@@ -103,11 +105,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Return editToken once — client must save it; it won't appear in GET responses
+    // Return editToken + revocationKey once — client must save both.
+    // Neither appears in GET responses. revocationKey is shown to user exactly once.
     return Response.json({
       success: true,
       identity: publicIdentity(identity),
       editToken: identity.editToken,
+      revocationKey: revocationKeyPlaintext,
     }, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Registration failed.';

@@ -20,11 +20,12 @@ Reports are welcome for the `reddid-web` repository (Next.js app). In-scope conc
 |------|---------|
 | **Authentication bypass** | Forging or bypassing the `editToken` check; editing another user's identity |
 | **Injection** | SQL/NoSQL injection (if applicable), path traversal in the data layer |
-| **Information disclosure** | Leaking `editToken`, `verificationChallenges`, or private wallet data in API responses |
+| **Information disclosure** | Leaking `editToken`, `verificationChallenges`, `proofUrl`, or private wallet data in API responses |
 | **Server-side request forgery** | Triggering requests to internal resources via Blockbook or other external calls |
 | **RDD address manipulation** | Substituting or corrupting a stored wallet address |
-| **Rate-limit bypass** | Circumventing registration or challenge-post limits |
+| **Rate-limit bypass** | Circumventing registration, challenge-post, or recovery limits |
 | **Challenge replay** | Reusing an expired or consumed verification challenge |
+| **revocationKey bypass** | Forging or reusing a recovery key to illicitly reissue an editToken |
 
 ---
 
@@ -44,8 +45,8 @@ The following are **not** considered security issues at this stage:
 ## Important constraints
 
 - **The server never stores private keys.** The identity model is intentionally non-custodial. If you find otherwise, that is a critical finding.
-- **`editToken` is the only authentication mechanism.** It is a 16-char hex secret shown once at registration. Loss of the token means loss of edit access (no reset path in v0.4).
-- **Data is stored in a flat JSON file in v0.4.** There is no database isolation between records. Concurrent-write bugs are a known limitation (D2 — SQLite migration planned).
+- **`editToken` is the primary authentication mechanism.** It is a 16-char hex secret shown once at registration. Tokens expire after 30 days; `POST /api/identities/[handle]/token` re-issues a new one. A separate `revocationKey` (64-char hex, shown once at registration, stored as a SHA-256 hash) allows recovery via `POST /api/identities/[handle]/recover` if the editToken is lost.
+- **Data is stored in a flat JSON file in v0.4.** Writes are atomic (tmp → renameSync pattern). No database isolation between records; SQLite migration is planned (Sprint 4).
 
 ---
 

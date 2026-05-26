@@ -312,6 +312,8 @@ interface WalletLinkProvider {
 | OG images | `@vercel/og` (ImageResponse) | Node.js runtime (not edge) |
 | CI | GitHub Actions | tsc, build, eslint |
 
+> **Warning — SQLite (Sprint 4, S4-01):** The planned SQLite data store must only be used with a **single Railway instance**. SQLite uses file-level write locking; under Railway auto-scaling or any multi-instance deployment on a shared volume, concurrent writers will cause data corruption or crashes. If horizontal scaling becomes necessary before migrating to Turso/Postgres, disable auto-scaling and pin to exactly one replica.
+
 ---
 
 ## What Is Mocked (Must Be Labeled in UI)

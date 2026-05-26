@@ -5,11 +5,21 @@
  * rather than inlining strings. This enables Railway / Docker deploys to
  * override values without code changes.
  *
- * Server-only values (DB path, etc.) are fine to use in API routes and
- * server components. Client-visible values must use NEXT_PUBLIC_ prefix.
+ * Server-only values (DB path, admin secret, etc.) are fine to use in API
+ * routes and server components. Client-visible values must use NEXT_PUBLIC_.
  *
  * Usage:
- *   import { DB_PATH, BLOCKBOOK_URL, BASE_URL } from '@/lib/config';
+ *   import { DB_PATH, DB_ENGINE, ADMIN_SECRET, BLOCKBOOK_URL, BASE_URL } from '@/lib/config';
+ *
+ * Required Railway env vars:
+ *   REDDID_DB_PATH        — absolute path on persistent volume (e.g. /app/data/db.json)
+ *   NEXT_PUBLIC_REDDID_BASE_URL — canonical public URL (e.g. https://redd.love)
+ *   ADMIN_SECRET          — Bearer token for /api/admin/reports (generate: openssl rand -hex 32)
+ *
+ * Optional Railway env vars:
+ *   REDDID_DB_ENGINE      — 'json' (default) | 'sqlite' (Sprint 4 S4-01)
+ *   REDDID_BLOCKBOOK_URL  — block explorer base URL (server-side fetches)
+ *   NEXT_PUBLIC_REDDID_BLOCKBOOK_URL — block explorer base URL (client-side widgets)
  */
 
 import path from 'path';
@@ -24,6 +34,28 @@ import path from 'path';
  */
 export const DB_PATH: string = process.env.REDDID_DB_PATH
   ?? path.join(process.cwd(), 'data', 'db.json');
+
+/**
+ * DataStore backend engine selector.
+ * 'json'   — JsonFileDataStore (default, current implementation)
+ * 'sqlite' — SqliteDataStore (Sprint 4 S4-01 — not yet implemented)
+ *
+ * Switch with: REDDID_DB_ENGINE=sqlite on Railway after S4-01 is complete.
+ */
+export const DB_ENGINE: 'json' | 'sqlite' =
+  (process.env.REDDID_DB_ENGINE === 'sqlite' ? 'sqlite' : 'json');
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Secret token for the admin abuse-report API (/api/admin/reports).
+ * Required to use the admin report queue. No default — undefined disables auth.
+ *
+ * Generate: openssl rand -hex 32
+ * Must match the Authorization: Bearer <token> header on API calls.
+ * Also accepted as ?secret=<token> query param for the /admin/reports page.
+ */
+export const ADMIN_SECRET: string | undefined = process.env.ADMIN_SECRET;
 
 // ── External services ─────────────────────────────────────────────────────────
 

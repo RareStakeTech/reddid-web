@@ -49,10 +49,11 @@ export interface WalletLink {
 // ── SocialProof ───────────────────────────────────────────────────────────────
 
 export type ProofMethod =
-  | 'challenge-post'   // user posts 8-char hex challenge code publicly
-  | 'signed-message'   // user signs with platform keypair (future)
-  | 'dns-txt'          // DNS TXT record (future, for websites)
-  | 'self-reported';   // no verification mechanism
+  | 'challenge-post'        // user posts 8-char hex challenge code publicly (trust-based, v0.4)
+  | 'url-fetch-verified'    // challenge-post + server fetched URL and confirmed code presence (S3-01)
+  | 'signed-message'        // user signs with platform keypair (future)
+  | 'dns-txt'               // DNS TXT record (future, for websites)
+  | 'self-reported';        // no verification mechanism
 
 export type VerificationStatus =
   | 'pending'   // challenge issued, not yet confirmed
@@ -238,6 +239,14 @@ export type PublicAgent = Omit<
  * Filtered wallets:  private-visibility entries excluded; revokedAt entries excluded
  * Filtered agents:   spend limits stripped via PublicAgent; revokedAt entries excluded
  */
+/**
+ * Social proof shape exposed through the public API.
+ * proofUrl is intentionally stripped — it may reveal content a user has since
+ * removed from their social profile and is not needed by any public consumer.
+ * Server-side verification logic reads it directly from the stored Identity.
+ */
+export type PublicSocialProof = Omit<SocialProof, 'proofUrl'>;
+
 export type PublicIdentity = Omit<
   Identity,
   | 'editToken'
@@ -246,9 +255,11 @@ export type PublicIdentity = Omit<
   | 'rddAddress'
   | 'wallets'
   | 'agents'
+  | 'socialProofs'
 > & {
-  wallets: WalletLink[];   // public/unlisted, non-revoked only
-  agents: PublicAgent[];   // non-revoked, spend limits stripped
+  wallets: WalletLink[];            // public/unlisted, non-revoked only
+  agents: PublicAgent[];            // non-revoked, spend limits stripped
+  socialProofs: PublicSocialProof[]; // proofUrl stripped for privacy
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -323,7 +334,8 @@ export interface ReserveSnapshot {
 
 export type TrustLevel =
   | 'self-reported'              // user asserts; no independent verification
-  | 'challenge-post-verified'    // 8-char hex challenge confirmed in a public post
+  | 'challenge-post-verified'    // 8-char hex challenge posted + trust-based acceptance (v0.4)
+  | 'url-fetch-verified'         // challenge posted + server fetched URL and confirmed code (S3-01)
   | 'wallet-signature-verified'  // ECDSA / ed25519 signature verified server-side
   | 'community-attested'         // multiple community members attested
   | 'project-attested'           // signed by ReddCoin project or named partner
@@ -509,8 +521,15 @@ export interface AbuseReport {
 
 // ── Internal DB schema ────────────────────────────────────────────────────────
 
+export interface StoredAbuseReport extends AbuseReport {
+  reviewed: boolean;      // admin has seen this report
+  reviewedAt: string | null;
+  reviewNote: string | null;
+}
+
 export interface DbSchema {
   identities: Identity[];
   revocationEvents: RevocationEvent[];
+  abuseReports: StoredAbuseReport[];
   version: number;
 }

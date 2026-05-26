@@ -8,9 +8,10 @@
 
 ---
 
-### ISSUE-001: editToken never expires — security risk
+### ISSUE-001: editToken never expires — security risk ✅ FIXED in v0.4.20
 **Labels:** `security`, `sprint-1`, `infrastructure`
 **Priority:** P0 — Critical
+**Status:** Resolved — 30-day expiry via `checkEditToken()`; `POST /api/identities/[handle]/token` for reissue; v1 grace rule for existing accounts
 **Blocked by:** Nothing
 
 **Problem:**
@@ -38,9 +39,10 @@ The editToken (16-char hex bearer token) stored in localStorage has no expiry fi
 
 ---
 
-### ISSUE-002: JsonFileDataStore — no atomic writes — data corruption risk
+### ISSUE-002: JsonFileDataStore — no atomic writes — data corruption risk ✅ FIXED in v0.4.20
 **Labels:** `security`, `infrastructure`, `sprint-1`, `bug`
 **Priority:** P0 — Critical before multi-user production
+**Status:** Resolved — `writeDb()` now uses tmp → `renameSync` pattern
 **Blocked by:** Nothing (partial fix possible without SQLite)
 
 **Problem:**
@@ -83,9 +85,10 @@ In-memory rate limiters (if any) reset when the Next.js server restarts. Under R
 
 ---
 
-### ISSUE-004: No account deletion or data export endpoint
+### ISSUE-004: No account deletion or data export endpoint ✅ FIXED in v0.4.20
 **Labels:** `security`, `ux`, `sprint-1`
 **Priority:** P1 — High (required for GDPR-adjacent trust)
+**Status:** Resolved — `DELETE /api/identities/[handle]` (with confirmation string) + `POST /api/identities/[handle]/export` both live
 **Blocked by:** ISSUE-002 (safe writes required first)
 
 **Problem:**
@@ -249,26 +252,20 @@ jobs:
 
 ---
 
-### ISSUE-010: Multiple wallet links (v2 API) has no UI
+### ISSUE-010: Multiple wallet links (v2 API) has no UI ✅ FIXED in v0.4.21
 **Labels:** `ux`, `enhancement`, `sprint-2`
 **Priority:** P2
-**Blocked by:** ISSUE-001 (editToken safety), ISSUE-002 (safe writes)
+**Status:** Resolved — wallet management section added to `/edit/[handle]` page in Sprint 2
+**Blocked by:** ~~ISSUE-001 (editToken safety), ISSUE-002 (safe writes)~~
 
 **Problem:**
-The `/api/identities/[handle]/wallets` CRUD API is fully implemented (POST/GET/DELETE/PATCH), but there is no UI to manage multiple wallets. Users can only use the single `rddAddress` field from registration.
+The `/api/identities/[handle]/wallets` CRUD API is fully implemented (POST/GET/DELETE/PATCH), but there was no UI to manage multiple wallets.
 
-**Solution:**
-Add "Manage wallets" section to /edit/[handle] page:
-- List current wallets with type badges (Legacy/SegWit)
-- Add wallet button (address + optional label)
-- Set primary wallet button
-- Remove wallet button (requires at least 1 remaining)
-
-**Acceptance Criteria:**
-- [ ] Edit page shows wallet management section
-- [ ] Primary wallet updates immediately on tip page
-- [ ] Max 20 wallets enforced in UI (store limit)
-- [ ] tsc passes
+**Resolution:**
+- "Manage wallets" section on /edit/[handle] page: lists wallets with type badges, add wallet form, set-primary button, remove button
+- TOKEN_EXPIRED detection in all wallet mutation handlers
+- Max 10 wallets enforced in UI (matching store limit)
+- tsc clean ✅
 
 ---
 
@@ -293,27 +290,21 @@ The Love Button currently only detects registered ReddID handles via URL-pattern
 
 ---
 
-### ISSUE-012: Handle recovery flow — user loses editToken, no recovery
+### ISSUE-012: Handle recovery flow — user loses editToken, no recovery ✅ FIXED in v0.4.20
 **Labels:** `security`, `ux`, `sprint-1`
 **Priority:** P2
-**Blocked by:** Nothing
+**Status:** Resolved — full recovery flow implemented in Sprint 1
 
 **Problem:**
-If a user clears localStorage, switches browsers, or loses their editToken, they permanently lose the ability to edit their handle. There is no recovery mechanism.
+If a user cleared localStorage or lost their editToken, they permanently lost the ability to edit their handle.
 
-**Solution (v0.4 — minimal):**
-Add a revocationKey (different from editToken) at registration:
-- Display once on the registration success page (after current editToken display)
-- Store as a hash (not plaintext) in db.json
-- Use to revoke + re-register handle if editToken is lost
-
-**Solution (v0.5 — proper):**
-Use wallet signature as the root of trust — sign a challenge with the registered RDD private key to prove ownership.
-
-**Acceptance Criteria (Sprint 1 minimal):**
-- [ ] revocationKey shown once on registration success page with clear "save this" instruction
-- [ ] POST /api/identities/[handle]/revoke accepts revocationKey + issues new editToken
-- [ ] tsc passes
+**Resolution:**
+- `revocationKey` (64-char hex) generated at registration; shown once on the post-registration interstitial with amber "Save this" instruction and copy button
+- Plaintext key never stored — SHA-256 hash stored in `revocationKey` field in db.json
+- `POST /api/identities/[handle]/recover` accepts the plaintext key; verifies hash; issues fresh editToken with new 30-day expiry
+- Rate-limited: 5 attempts per IP per hour
+- Identities registered before Sprint 1 have `revocationKey: null` — endpoint returns `422 NO_RECOVERY_KEY` with helpful message
+- tsc clean ✅
 
 ---
 
@@ -381,6 +372,110 @@ Add to manifest.json `browser_specific_settings.gecko`:
 
 ---
 
+## Sprint 3 — Trust Foundations (In Progress)
+
+---
+
+### ISSUE-019: Social proof revocation — no UI or API ✅ FIXED in v0.4.23
+**Labels:** `ux`, `security`, `sprint-3`
+**Priority:** P1
+**Status:** Resolved — S3-04 complete
+
+**Problem:**
+Users had no way to remove a social proof once added. Revoked Twitter/GitHub accounts could remain on public profiles indefinitely.
+
+**Resolution:**
+- `DELETE /api/identities/[handle]/socials/[platform]` — requires editToken; soft-deletes via `verificationStatus: 'revoked'`; record retained for audit
+- `removeSocialProof()` store method; added to DataStore interface and db.ts shim
+- Trash icon (Trash2 from lucide-react) on each social proof row in /edit/[handle] with `window.confirm()` guard
+- Revoked proofs filtered from all public API responses by `publicIdentity()`
+- TOKEN_EXPIRED detection in remove handler
+- tsc clean ✅
+
+---
+
+### ISSUE-020: proofUrl exposed in public API — privacy risk ✅ FIXED in v0.4.23
+**Labels:** `security`, `privacy`, `sprint-3`
+**Priority:** P2
+**Status:** Resolved — S3-08 complete
+
+**Problem:**
+`proofUrl` was included in `GET /api/identities/[handle]` responses. This exposed the URL of the user's public social post, which can be used to fingerprint or track users across platforms even if they later delete the post.
+
+**Resolution:**
+- New type `PublicSocialProof = Omit<SocialProof, 'proofUrl'>` in `src/lib/types.ts`
+- `PublicIdentity.socialProofs` changed to `PublicSocialProof[]`
+- `publicIdentity()` in `db.ts` now maps each proof through `({ proofUrl: _pu, ...proof }) => proof` before returning
+- proofUrl retained server-side for future S3-01 server-side verification
+- tsc clean ✅
+
+---
+
+### ISSUE-021: Server-side URL fetch for social proof verification
+**Labels:** `security`, `enhancement`, `sprint-3`
+**Priority:** P1
+**Blocked by:** Nothing
+
+**Problem:**
+`confirmSocialProof()` sets `verificationStatus: 'verified'` without fetching the `proofUrl` to confirm the challenge code appears there. This is explicitly labeled trust-based in the UI, but remains an open gap for S3-01.
+
+**Solution:**
+- At confirm time, server fetches `proofUrl` (with timeout + size cap)
+- Searches response body for the 8-char challenge code
+- If found: `verificationStatus: 'verified'`; if not found or fetch fails: return error with guidance
+- Add new trust level: `url-fetch-verified` distinct from `challenge-post-verified`
+
+**Acceptance Criteria:**
+- [ ] Server fetches proofUrl at confirm time
+- [ ] Challenge code found in fetched content before setting 'verified'
+- [ ] Timeout: 5s; max response size: 500KB
+- [ ] Graceful fallback if URL is unreachable (user can retry)
+- [ ] New trust level type in TrustLevel enum
+- [ ] tsc passes
+
+---
+
+### ISSUE-022: Re-verify expired social proofs
+**Labels:** `ux`, `sprint-3`
+**Priority:** P2
+**Blocked by:** ISSUE-021
+
+**Problem:**
+Once a social proof's challenge expires (8h), there is no UI for the user to start a new verification attempt for the same platform. The only path is to revoke and re-add.
+
+**Solution:**
+- On /edit/[handle], show "Re-verify" button next to expired/failed proofs
+- Clicking triggers a new challenge request for that platform
+- Redirects user to /verify with platform pre-filled
+
+**Acceptance Criteria:**
+- [ ] "Re-verify" button visible for expired and failed proofs on edit page
+- [ ] Button pre-fills /verify with the platform
+- [ ] tsc passes
+
+---
+
+### ISSUE-023: Abuse reporting admin view
+**Labels:** `security`, `enhancement`, `sprint-3`
+**Priority:** P3
+**Blocked by:** Nothing (route exists; needs admin surface)
+
+**Problem:**
+`POST /api/report` is implemented and stores abuse reports, but there is no admin surface to view, triage, or act on them.
+
+**Solution:**
+- Protected admin route at `/admin/reports` (IP allowlist or basic auth header)
+- Lists pending reports with handle, reporter, reason, timestamp
+- Mark as reviewed, escalate, or dismiss
+
+**Acceptance Criteria:**
+- [ ] Admin can view all pending reports
+- [ ] Can mark report as reviewed
+- [ ] Route is not publicly accessible
+- [ ] tsc passes
+
+---
+
 ## Deferred / Future Sprints
 
 ### ISSUE-016: Agent management UI
@@ -409,23 +504,28 @@ Nostr and Farcaster are in platforms.ts with status 'planned'. Add content scrip
 
 ## Issue Priority Summary
 
-| ID | Title | Priority | Sprint |
-|----|-------|----------|--------|
-| ISSUE-001 | editToken never expires | P0 | 1 |
-| ISSUE-002 | JsonFileDataStore no atomic writes | P0 | 1/4 |
-| ISSUE-003 | Rate limiting resets on restart | P1 | 1/4 |
-| ISSUE-004 | No account deletion or data export | P1 | 1 |
-| ISSUE-005 | Reserve/bridge missing DEMO banners | P1 | 0 |
-| ISSUE-006 | "Verified" label is trust-based only | P1 | 1/3 |
-| ISSUE-007 | package.json version stuck at 0.1.0 | P2 | 0 |
-| ISSUE-008 | UNSAFE_VAR_ASSIGNMENT warnings | P2 | 1 |
-| ISSUE-009 | No CI pipeline | P2 | 4 |
-| ISSUE-010 | Wallet management UI missing | P2 | 2 |
-| ISSUE-011 | E10 RDD address detection | P2 | 2 |
-| ISSUE-012 | No handle recovery flow | P2 | 1 |
-| ISSUE-013 | Staking calc — no financial advice disclaimer | P3 | 0 |
-| ISSUE-014 | Firefox data_collection_permissions | P3 | 4 |
-| ISSUE-015 | OG image not tested | P3 | 1 |
-| ISSUE-016 | Agent management UI | P4 | 6 |
-| ISSUE-017 | SQLite migration | P1(prod) | 4 |
-| ISSUE-018 | Nostr/Farcaster platform support | P3 | 3 |
+| ID | Title | Priority | Sprint | Status |
+|----|-------|----------|--------|--------|
+| ISSUE-001 | editToken never expires | P0 | 1 | ✅ Fixed v0.4.20 |
+| ISSUE-002 | JsonFileDataStore no atomic writes | P0 | 1/4 | ✅ Fixed v0.4.20 |
+| ISSUE-003 | Rate limiting resets on restart | P1 | 4 | ⏳ Partial (in-memory; resets on restart) |
+| ISSUE-004 | No account deletion or data export | P1 | 1 | ✅ Fixed v0.4.20 |
+| ISSUE-005 | Reserve/bridge missing DEMO banners | P1 | 0 | ✅ Fixed v0.4.x |
+| ISSUE-006 | "Verified" label is trust-based only | P1 | 1/3 | 🟡 Partial (tooltip honest; server-fetch pending S3-01) |
+| ISSUE-007 | package.json version stuck at 0.1.0 | P2 | 0 | ✅ Fixed (now 0.4.23) |
+| ISSUE-008 | UNSAFE_VAR_ASSIGNMENT warnings | P2 | D | ⏳ Pending |
+| ISSUE-009 | No CI pipeline | P2 | 4 | ⏳ Pending |
+| ISSUE-010 | Wallet management UI missing | P2 | 2 | ✅ Fixed v0.4.21 |
+| ISSUE-011 | E10 RDD address detection | P2 | 2 | ⏳ Pending |
+| ISSUE-012 | No handle recovery flow | P2 | 1 | ✅ Fixed v0.4.20 |
+| ISSUE-013 | Staking calc — no financial advice disclaimer | P3 | 0 | ✅ Fixed v0.4.x |
+| ISSUE-014 | Firefox data_collection_permissions | P3 | 4 | ⏳ Pending |
+| ISSUE-015 | OG image not tested | P3 | 1 | ⏳ Pending |
+| ISSUE-016 | Agent management UI | P4 | 6 | ⏳ Pending |
+| ISSUE-017 | SQLite migration | P1(prod) | 4 | ⏳ Pending |
+| ISSUE-018 | Nostr/Farcaster platform support | P3 | 3 | ⏳ Pending |
+| ISSUE-019 | Social proof revocation — no UI or API | P1 | 3 | ✅ Fixed v0.4.23 |
+| ISSUE-020 | proofUrl exposed in public API | P2 | 3 | ✅ Fixed v0.4.23 |
+| ISSUE-021 | Server-side URL fetch for social proof | P1 | 3 | ✅ Fixed v0.4.24 (generic; Twitter/Instagram deferred) |
+| ISSUE-022 | Re-verify expired social proofs | P2 | 3 | ✅ Fixed v0.4.24 |
+| ISSUE-023 | Abuse reporting admin view | P3 | 3 | ✅ Fixed v0.4.24 |

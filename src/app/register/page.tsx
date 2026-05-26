@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, XCircle, Loader2, AlertCircle, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, AlertCircle, Plus, Trash2, ChevronDown, ChevronUp, ShieldAlert, Copy, Check } from 'lucide-react';
 import { sanitizeHandle, isValidHandle } from '@/lib/validation';
 import { LIVE_PLATFORMS } from '@/lib/platforms';
 
@@ -20,6 +20,13 @@ interface FormState {
   displayName: string;
   bio: string;
   website: string;
+}
+
+/** Data shown after successful registration, before redirecting. */
+interface RegistrationResult {
+  handle: string;
+  editToken: string;
+  revocationKey: string;
 }
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -246,6 +253,163 @@ function SocialLinksSection({
   );
 }
 
+// ── Recovery key display — shown after successful registration ─────────────────
+
+function RecoveryKeyScreen({
+  result,
+  onConfirmed,
+}: {
+  result: RegistrationResult;
+  onConfirmed: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  function copyKey() {
+    navigator.clipboard.writeText(result.revocationKey).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div style={{ maxWidth: 560, margin: '0 auto', padding: '48px 20px' }}>
+      <div
+        style={{
+          background: 'rgba(251,191,36,0.06)',
+          border: '1px solid rgba(251,191,36,0.35)',
+          borderRadius: 12,
+          padding: 28,
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+          <ShieldAlert size={22} style={{ color: '#fbbf24', flexShrink: 0 }} />
+          <h2
+            style={{
+              fontSize: '1.15rem',
+              fontWeight: 700,
+              fontFamily: "'Rubik', sans-serif",
+              color: '#fbbf24',
+              margin: 0,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Save your recovery key before continuing
+          </h2>
+        </div>
+
+        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: 20 }}>
+          <strong style={{ color: 'var(--text-primary)' }}>@{result.handle}</strong> is registered.
+          This is your <strong style={{ color: '#fbbf24' }}>recovery key</strong> — the only way to
+          reclaim your handle if you ever lose your edit token. Store it securely (password manager,
+          printed copy, encrypted note). <strong style={{ color: '#f87171' }}>It will not be shown again.</strong>
+        </p>
+
+        {/* Key display */}
+        <div
+          style={{
+            background: '#0a0a0a',
+            border: '1px solid rgba(251,191,36,0.3)',
+            borderRadius: 8,
+            padding: '12px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <code
+            style={{
+              flex: 1,
+              fontSize: '0.72rem',
+              fontFamily: 'monospace',
+              color: '#fbbf24',
+              wordBreak: 'break-all',
+              lineHeight: 1.7,
+              letterSpacing: '0.04em',
+            }}
+          >
+            {result.revocationKey}
+          </code>
+          <button
+            type="button"
+            onClick={copyKey}
+            title="Copy recovery key"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              background: 'rgba(251,191,36,0.1)',
+              border: '1px solid rgba(251,191,36,0.3)',
+              borderRadius: 6,
+              color: copied ? '#4ade80' : '#fbbf24',
+              cursor: 'pointer',
+              padding: '6px 10px',
+              fontSize: '0.75rem',
+              fontFamily: "'Rubik', sans-serif",
+              fontWeight: 600,
+              flexShrink: 0,
+              transition: 'color 0.2s',
+            }}
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+
+        {/* Confirmation checkbox */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            cursor: 'pointer',
+            marginBottom: 22,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={e => setConfirmed(e.target.checked)}
+            style={{ marginTop: 2, flexShrink: 0, accentColor: '#fbbf24' }}
+          />
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+            I have saved my recovery key in a secure location. I understand it will not be shown again.
+          </span>
+        </label>
+
+        {/* CTA */}
+        <button
+          type="button"
+          onClick={onConfirmed}
+          disabled={!confirmed}
+          style={{
+            width: '100%',
+            background: confirmed ? '#fbbf24' : 'rgba(251,191,36,0.2)',
+            color: confirmed ? '#000' : 'rgba(251,191,36,0.5)',
+            border: 'none',
+            borderRadius: 8,
+            padding: '12px 24px',
+            fontFamily: "'Rubik', sans-serif",
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            cursor: confirmed ? 'pointer' : 'not-allowed',
+            transition: 'all 0.15s',
+          }}
+        >
+          Got it — take me to my tip page →
+        </button>
+      </div>
+
+      <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: 14, lineHeight: 1.6 }}>
+        Your edit token has been saved to your browser&apos;s localStorage automatically.
+        Your recovery key is separate — it lets you reclaim your handle even from a different device.
+      </p>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
@@ -257,6 +421,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<AvailabilityState>('idle');
+  const [registrationResult, setRegistrationResult] = useState<RegistrationResult | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced availability check
@@ -331,7 +496,12 @@ export default function RegisterPage() {
       if (data.editToken) {
         localStorage.setItem(`reddid_edittoken_${form.handle}`, data.editToken);
       }
-      router.push(`/${form.handle}?new=1`);
+      // Show recovery key interstitial — user must acknowledge before redirect
+      setRegistrationResult({
+        handle: form.handle,
+        editToken: data.editToken ?? '',
+        revocationKey: data.revocationKey ?? '',
+      });
     } catch {
       setError('Network error. Please check your connection and try again.');
     } finally {
@@ -340,6 +510,16 @@ export default function RegisterPage() {
   }
 
   const canSubmit = !submitting && !!form.handle && !!form.rddAddress && availability !== 'taken' && availability !== 'checking';
+
+  // Show recovery key screen after registration, before redirect
+  if (registrationResult) {
+    return (
+      <RecoveryKeyScreen
+        result={registrationResult}
+        onConfirmed={() => router.push(`/${registrationResult.handle}?new=1`)}
+      />
+    );
+  }
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '48px 20px' }}>

@@ -6,6 +6,13 @@
  *
  * All API routes and server components must go through getStore() —
  * never import JsonFileDataStore directly.
+ *
+ * Sprint 1 additions (2026-05-26):
+ *  - createIdentity() now returns { identity, revocationKeyPlaintext } (S1-06)
+ *  - reissueToken() — rotate editToken (S1-01)
+ *  - deleteIdentity() — self-service account removal (S1-02)
+ *  - exportIdentity() — GDPR data export (S1-03)
+ *  - recoverByRevocationKey() — emergency access recovery (S1-06)
  */
 
 import type {
@@ -17,6 +24,8 @@ import type {
   UpdateIdentityInput,
   CreateAgentInput,
   ReserveSnapshot,
+  StoredAbuseReport,
+  ProofMethod,
 } from '@/lib/types';
 import type { AddWalletInput } from '@/lib/providers/wallet-link-provider';
 
@@ -33,12 +42,54 @@ export interface DataStore {
   countIdentities(): number;
 
   // ── Identity mutations ──────────────────────────────────────────────────────
-  createIdentity(input: CreateIdentityInput): Identity;
+
+  /**
+   * Create a new identity.
+   * Returns the stored Identity AND the plaintext revocationKey.
+   * The plaintext is shown to the user exactly once and never stored.
+   * The SHA-256 hash is persisted in identity.revocationKey.
+   */
+  createIdentity(
+    input: CreateIdentityInput,
+  ): { identity: Identity; revocationKeyPlaintext: string };
+
   updateIdentity(
     handle: string,
     editToken: string,
     updates: UpdateIdentityInput,
   ): Identity;
+
+  /**
+   * Rotate the editToken. Accepts expired tokens (otherwise the user couldn't
+   * recover from expiry). Still rejects wrong tokens.
+   */
+  reissueToken(
+    handle: string,
+    editToken: string,
+  ): { editToken: string; expiresAt: string };
+
+  /**
+   * Hard-delete an identity. editToken must be valid and non-expired.
+   * Logs a RevocationEvent before deletion for audit purposes.
+   */
+  deleteIdentity(handle: string, editToken: string): void;
+
+  /**
+   * Return a full copy of the identity's stored data.
+   * revocationKey hash is omitted (internal security data).
+   * editToken IS included — it's the user's own credential.
+   */
+  exportIdentity(handle: string, editToken: string): Omit<Identity, 'revocationKey'>;
+
+  /**
+   * Verify the revocationKey plaintext and issue a new editToken.
+   * Use when the user has lost their editToken.
+   * The revocationKey is NOT rotated — user may need it again.
+   */
+  recoverByRevocationKey(
+    handle: string,
+    revocationKey: string,
+  ): { editToken: string; expiresAt: string };
 
   // ── Social proofs ──────────────────────────────────────────────────────────
   /**
@@ -52,7 +103,15 @@ export interface DataStore {
   ): { code: string; expiresAt: string };
   /**
    * Record a social proof after the user claims to have posted the challenge.
-   * v0.3: trust-based. v0.5: auto-verify via platform API.
+   *
+   * proofMethod controls the stored trust level:
+   *  - 'challenge-post' (default) — trust-based; user submitted a URL but it
+   *    was not fetched. TrustBadge renders as 'Post Verified'.
+   *  - 'url-fetch-verified' — server fetched proofUrl and confirmed the
+   *    challenge code appears in the response. TrustBadge renders as 'URL Verified'.
+   *
+   * S3-01: route now calls fetchProofUrl() before invoking this method and
+   * passes the appropriate proofMethod.
    */
   confirmSocialProof(
     handle: string,
@@ -60,11 +119,18 @@ export interface DataStore {
     username: string,
     proofUrl: string,
     editToken: string,
+    proofMethod?: ProofMethod,
   ): Identity;
   addSocialProof(
     handle: string,
     proof: Omit<SocialProof, 'addedAt'>,
   ): Identity;
+
+  /**
+   * Set verificationStatus='revoked' on a social proof.
+   * The record is kept for audit but hidden from publicIdentity().
+   */
+  removeSocialProof(handle: string, platform: string, editToken: string): Identity;
 
   // ── Agent management ────────────────────────────────────────────────────────
   /**
@@ -111,6 +177,24 @@ export interface DataStore {
    * editToken required.
    */
   setPrimaryWallet(handle: string, editToken: string, walletId: string): WalletLink;
+
+  // ── Abuse reports ────────────────────────────────────────────────────────────
+  /**
+   * Persist an abuse report to the store.
+   * v0.4: writes to abuseReports[] in db.json.
+   */
+  saveAbuseReport(report: StoredAbuseReport): void;
+
+  /**
+   * Return all stored abuse reports, newest first.
+   * Admin-only — never exposed in public API routes.
+   */
+  getAbuseReports(): StoredAbuseReport[];
+
+  /**
+   * Mark a report as reviewed (admin action).
+   */
+  markReportReviewed(reportId: string, note?: string): StoredAbuseReport;
 
   // ── Reserve ─────────────────────────────────────────────────────────────────
   /** Returns placeholder zeros until MockBridgeStatus is replaced by LiveBridgeStatus. */

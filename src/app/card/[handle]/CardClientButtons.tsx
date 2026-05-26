@@ -6,6 +6,18 @@ import { Download, Printer } from 'lucide-react';
 import ShareButton from '@/components/ShareButton';
 import CopyButton from '@/components/CopyButton';
 
+/** Build a Twitter/X share intent URL with pre-filled text. */
+function twitterShareUrl(handle: string, pageUrl: string): string {
+  const text = `Tip @${handle} directly with Ɍ RDD — no middleman, no fees.\n${pageUrl}`;
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
+}
+
+/** Build a WhatsApp share URL. */
+function whatsappShareUrl(handle: string, pageUrl: string): string {
+  const text = `Tip @${handle} with ReddCoin (Ɍ RDD): ${pageUrl}`;
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
 interface Props {
   handle: string;
   addr: string;
@@ -80,6 +92,41 @@ export default function CardClientButtons({ handle, addr, pageUrl, bip21 }: Prop
         className="no-print"
         style={{ marginTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}
       >
+        {/* Social share — first so they're most prominent */}
+        <a
+          href={twitterShareUrl(handle, pageUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            ...btnBase,
+            background: '#000',
+            border: '1px solid #333',
+            color: '#fff',
+            textDecoration: 'none',
+          }}
+          title="Share on Twitter / X"
+        >
+          <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>𝕏</span>
+          Share on X
+        </a>
+
+        <a
+          href={whatsappShareUrl(handle, pageUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            ...btnBase,
+            background: 'rgba(37,211,102,0.08)',
+            border: '1px solid rgba(37,211,102,0.25)',
+            color: '#25D366',
+            textDecoration: 'none',
+          }}
+          title="Share on WhatsApp"
+        >
+          <span style={{ fontSize: '0.88rem', lineHeight: 1 }}>💬</span>
+          WhatsApp
+        </a>
+
         <button type="button" style={btnBase} onClick={() => window.print()}>
           <Printer size={14} />
           Print / Save PDF

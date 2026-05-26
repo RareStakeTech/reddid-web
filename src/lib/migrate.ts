@@ -163,7 +163,11 @@ export function runMigrations(): number {
     db.identities = migrated;
     const dir = path.dirname(DB_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+    // Atomic write — tmp file first, then rename, matching writeDb() in json-file-store.ts.
+    // Guards against partial writes if the process is killed mid-flush (e.g., Railway restarts).
+    const tmp = DB_PATH + '.migrate.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(db, null, 2), 'utf-8');
+    fs.renameSync(tmp, DB_PATH);
     console.log(`[migrate] Applied migrations to ${changed} record(s). DB at v${CURRENT_SCHEMA_VERSION}.`);
   }
 

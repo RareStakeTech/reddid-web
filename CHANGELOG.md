@@ -12,8 +12,200 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - ReddRail state channel sessions (real Gajumaru Associate Chain integration; expected Q3/Q4 2026)
 - AI-agent payment policies (v0.4)
 - Wallet signature verification (ECDSA, reddcoinjs-lib) — v0.5
-- `DELETE /api/identities/[handle]` self-service account deletion — v0.5
 - Automated test suite (vitest + Testing Library) — v0.5
+
+---
+
+## [0.4.26] — 2026-05-26 — Sprint 4: S4-05 env vars + S4-07+08 security headers
+
+### Added (S4-07 + S4-08 — HTTPS enforcement + security headers)
+- `next.config.ts` — Fully populated from empty skeleton:
+  - **HTTPS redirect** (`redirects()`): fires when `x-forwarded-proto: http` header is present; redirects permanently to `https://<hostname>` derived from `NEXT_PUBLIC_REDDID_BASE_URL` env var (not hardcoded domain)
+  - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload` (2-year HSTS with preload list eligibility)
+  - **X-Frame-Options**: `DENY` — clickjacking protection
+  - **X-Content-Type-Options**: `nosniff` — MIME-type sniffing prevention
+  - **Referrer-Policy**: `strict-origin-when-cross-origin`
+  - **Permissions-Policy**: `camera=(), microphone=(), geolocation=(), payment=()`
+  - **Content-Security-Policy**: `default-src 'self'`; allowlisted `fonts.googleapis.com`, `fonts.gstatic.com`, `blockbook.reddcoin.com`, `api.coingecko.com`; `frame-ancestors 'none'`; `object-src 'none'`; `base-uri 'self'`; `form-action 'self'`; includes `unsafe-inline`/`unsafe-eval` for Next.js App Router hydration (nonce-based hardening deferred to v0.5)
+  - Applied via `headers()` to all routes via `source: '/(.*)'`
+
+### Added (S4-05 — environment variable management)
+- `src/lib/config.ts` — New exports:
+  - `DB_ENGINE: 'json' | 'sqlite'` — controlled by `REDDID_DB_ENGINE` env var; defaults to `'json'`; `'sqlite'` available after Sprint 4 S4-01
+  - `ADMIN_SECRET: string | undefined` — controlled by `ADMIN_SECRET` env var; used by admin abuse-report API
+  - Updated JSDoc to list all required Railway env vars and generation commands
+- `src/lib/store/index.ts` — `getStore()` now imports `DB_ENGINE` from config; throws a descriptive error if `REDDID_DB_ENGINE=sqlite` is set before `SqliteDataStore` is implemented; includes `runMigrations()` guard within the `'json'` branch only
+- `.env.example` — Added `REDDID_DB_ENGINE` and `ADMIN_SECRET` entries; clarified which vars are REQUIRED on Railway vs optional
+
+### Build results (v0.4.26)
+- `tsc --noEmit` → exit 0 ✅
+- `npm run lint` → exit 0 ✅
+- `npm run build` → exit 0, 26 static pages compiled ✅
+- Security headers: X-Frame-Options, HSTS, CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+
+---
+
+## [0.4.25] — 2026-05-26 — Sprint 4 prep: migrate.ts atomic write fix + sprint plan update
+
+### Fixed
+- `src/lib/migrate.ts` — `runMigrations()` previously called `fs.writeFileSync()` directly when persisting migrated records, bypassing the tmp→rename atomic write protection used by `writeDb()` in `json-file-store.ts`. If the process was killed mid-write (e.g., Railway restart during startup), `db.json` could be left partially written and corrupt. Fixed: now writes to `DB_PATH + '.migrate.tmp'` and then `fs.renameSync(tmp, DB_PATH)` — matching the pattern in `json-file-store.ts`.
+
+### Changed (docs)
+- `docs/SPRINT_PLAN.md` — Sprint 4 updated: architect review incorporated (2026-05-26). S4-09 marked as already live. S4-12 removed (duplicate of S1-01). S4-10 (test suite) moved to Sprint 5 as gate item (S5-10). S4-06 clarified as SQLite-backed rate limiting (not Upstash). Execution order and trap notes added.
+- `docs/SPRINT_PLAN.md` — Sprint 5 updated: S5-10 (automated test suite) and S5-11 (wallet sig verification via reddcoinjs-lib) added.
+- `docs/ROADMAP.md` — Added deprecation notice at top: lettered sprint plan (A–E) superseded by `SPRINT_PLAN.md`. Leaderboard item (Sprint B6) flagged as explicitly rejected. Historical sections retained.
+
+---
+
+## [0.4.24] — 2026-05-26 — Sprint 3: Server-side proof verification + admin reports
+
+### Added
+
+**S3-01/S3-02 — Server-side URL fetch for social proof verification**
+- `src/lib/proof-fetcher.ts` — NEW: `fetchProofUrl(proofUrl, challengeCode)` function; fetches the user-supplied URL (5s timeout, 512KB body cap, HTTPS only) and searches the response body for the 8-char hex challenge code (case-insensitive); returns `{ found, reachable, httpStatus?, error? }`
+- `src/app/api/verify/confirm/route.ts` — integrated proof fetcher; when `proofUrl` is present, the route now reads the pending challenge code from the identity, fetches the URL, and either: (a) upgrades to `proofMethod: 'url-fetch-verified'` if the code is found; (b) returns 422 `CODE_NOT_FOUND` with user guidance if the URL loaded but the code was absent; (c) returns 503 `FETCH_FAILED` with retry suggestion if the URL was unreachable; TOKEN_EXPIRED detection added; response now includes `proofMethod` field so the client can show the trust level achieved
+- `src/lib/store/interface.ts` — `confirmSocialProof()` signature extended with optional `proofMethod?: ProofMethod` parameter (default `'challenge-post'`)
+- `src/lib/store/json-file-store.ts` — `confirmSocialProof()` now accepts and stores the `proofMethod` parameter; updated comment explains the 'challenge-post' vs 'url-fetch-verified' distinction
+- `src/lib/db.ts` — `confirmSocialProof` shim forwards the optional `proofMethod` parameter
+
+**S3-03 — Distinguish trust-based vs. URL-verified proofs in UI**
+- `src/lib/types.ts` — `ProofMethod` union: added `'url-fetch-verified'`; `TrustLevel` union: added `'url-fetch-verified'`
+- `src/components/TrustBadge.tsx` — new `'url-fetch-verified'` entry in `LEVEL_CONFIG`: green badge ("URL Verified"), tooltip explains server independently confirmed the proof; `'challenge-post-verified'` tooltip updated to clarify trust-based nature
+- `src/app/[handle]/page.tsx` — trust level mapping updated: `proofMethod === 'url-fetch-verified'` → `TrustLevel: 'url-fetch-verified'` (green); otherwise `'challenge-post-verified'` (blue)
+
+**S3-05 — Re-verify expired/failed social proofs**
+- `src/app/edit/[handle]/page.tsx` — `StatusBadge` component updated: handles `expired` and `url-fetch-verified` statuses; shows orange "Challenge Expired" badge for expired proofs; shows green "URL Verified ✓✓" badge for URL-verified proofs; "Verify →" button now shows "Re-verify →" (orange) for expired/failed proofs; verify link now passes `?username=` param to pre-fill the verify page
+- `src/app/verify/page.tsx` — reads `?username=` from search params to pre-fill the username field on re-verify flow
+
+**S3-07 — Abuse reporting admin queue**
+- `src/lib/types.ts` — `StoredAbuseReport` type extends `AbuseReport` with `reviewed`, `reviewedAt`, `reviewNote` fields; `DbSchema` now includes `abuseReports: StoredAbuseReport[]`
+- `src/lib/store/interface.ts` — `saveAbuseReport()`, `getAbuseReports()`, `markReportReviewed()` added to DataStore contract
+- `src/lib/store/json-file-store.ts` — implements all three abuse report methods; `EMPTY_DB` now initializes `abuseReports: []`; `saveAbuseReport()` prepends newest-first
+- `src/lib/db.ts` — shim exports for `saveAbuseReport`, `getAbuseReports`, `markReportReviewed`
+- `src/app/api/report/route.ts` — reports now persisted via `saveAbuseReport()` instead of console.log only
+- `src/app/api/admin/reports/route.ts` — NEW: `GET` lists all reports; `POST` marks a report reviewed with optional note; protected by `Authorization: Bearer <ADMIN_SECRET>` header
+- `src/app/admin/reports/page.tsx` — NEW: server component admin triage queue at `/admin/reports?secret=<ADMIN_SECRET>`; shows pending (orange) and reviewed reports; API hint for curl-based marking; `robots: noindex`
+- `src/lib/providers/mock/mock-revocation-registry.ts` — fixed: two `EMPTY_DB` literals updated to include `abuseReports: []` to match new `DbSchema` type
+
+### Changed
+- `package.json` — version bumped to `0.4.24`
+
+---
+
+## [0.4.23] — 2026-05-26 — Sprint 3: Trust foundations
+
+### Added
+
+**S3-04 — Revoke social proof (self-service)**
+- `src/lib/store/json-file-store.ts` — `removeSocialProof(handle, platform, editToken)`: sets `verificationStatus='revoked'` on the matching proof; the record is kept for audit but soft-deleted from the public view; throws `NOT_FOUND` if no active proof, `HANDLE_NOT_FOUND` if handle missing, `TOKEN_EXPIRED`/`UNAUTHORIZED` from `checkEditToken()`
+- `src/lib/store/interface.ts` — `removeSocialProof()` added to DataStore contract
+- `src/lib/db.ts` — `removeSocialProof` shim export
+- `src/app/api/identities/[handle]/socials/[platform]/route.ts` — `DELETE /api/identities/{handle}/socials/{platform}` (body: `{ editToken }`); returns `{ ok, identity }` on success; `GET` variant returns the public social proof record for a given platform
+- `src/lib/db.ts` `publicIdentity()` — revoked social proofs are now filtered out (alongside the existing proofUrl strip) so they do not appear on public tip pages or in the explore API
+- `src/app/edit/[handle]/page.tsx` — Trash icon button added to each social account row; calls `DELETE /api/identities/{handle}/socials/{platform}` with native `window.confirm()` guard; TOKEN_EXPIRED detection consistent with other wallet handlers; `socialRemoveError` displayed inline below the accounts list
+
+**S3-08 — Privacy: strip proofUrl from public identity**
+- `src/lib/types.ts` — new `PublicSocialProof = Omit<SocialProof, 'proofUrl'>` type; `PublicIdentity` updated to use `socialProofs: PublicSocialProof[]` (previously inherited the full `SocialProof[]` including proofUrl)
+- `src/lib/db.ts` `publicIdentity()` — maps each social proof through `({ proofUrl: _pu, ...proof }) => proof` before returning; proofUrl remains in the stored `Identity` and is available to server-side code (S3-01 URL fetch will use it)
+
+**S3-09 — Trust badge tooltips ✅ already complete**
+- `src/components/TrustBadge.tsx` — LEVEL_CONFIG already contains plain-English tooltip for each trust level; surfaced via `title` attribute; no code change required
+
+### Changed
+- `package.json` — version bumped to `0.4.23`
+
+---
+
+## [0.4.22] — 2026-05-26 — Sprint 2: TOKEN_EXPIRED UX polish
+
+### Added
+
+**S2-11 — Inline token-expiry recovery on edit and verify pages**
+- `src/app/edit/[handle]/page.tsx` — when any mutation (profile save, add/remove/set-primary wallet) returns HTTP 401 with "expired" in the error message, an amber recovery panel slides in between the profile completion bar and the form instead of showing the raw API error string; panel contains a "Reissue token" button that calls `POST /api/identities/{handle}/token`, writes the new token to `localStorage`, and clears the expiry state; `RefreshCw` icon (lucide) used on the button
+- `src/app/verify/page.tsx` — same TOKEN_EXPIRED detection in both `requestChallenge` and `confirmProof`; an amber panel appears in the error area for each step with a "Reissue token" button; the challenge step message reassures the user that "the challenge code above is still valid"
+
+### Changed
+- `package.json` — version bumped to `0.4.22`
+
+---
+
+## [0.4.21] — 2026-05-26 — Sprint 2: Creator Onboarding & Shareability
+
+### Added
+
+**S2-01 — Tip card social share buttons**
+- `src/app/card/[handle]/CardClientButtons.tsx` — "Share on 𝕏" button (Twitter intent with pre-filled `@handle + redd.love URL` text) and "WhatsApp" button (wa.me deep link with pre-filled message); both open in new tab; appear prominently at the top of the action bar
+
+**S2-02 — Markdown embed badge**
+- `src/app/api/badge/[handle]/route.ts` — `GET /api/badge/[handle]`; returns a shields.io-style SVG badge in ReddCoin red; brand "Tip" label on left, `@handle · Ɍ RDD` on right; green dot overlay if any social proof is verified; 5-minute public cache
+- `src/app/[handle]/page.tsx` — "Embed badge" section added between the verify CTA and the card footer; shows a "Copy Markdown" button with the canonical `[![...](badge)](tippage)` snippet
+
+**S2-05 — Post-registration onboarding guide**
+- `src/app/[handle]/page.tsx` — `?new=1` success banner replaced with a 3-step onboarding guide: ① Tip page live (green ✓, immediate); ② Link social accounts (red → CTA button to /verify); ③ Share your handle (greyed, last step). Visually progressive with connectors between steps.
+
+**S2-06 — Explore "Most verified" sort**
+- `src/app/explore/page.tsx` — third sort option added: "Most verified" sorts creator cards by number of `verificationStatus === 'verified'` social proofs, descending; local `PublicIdentity` type updated to include `verificationStatus?: string` on socialProofs
+
+### Fixed
+- `src/lib/platforms.ts` — Nostr icon changed from `'⚡'` (clash with Kick) to `'◆'`
+
+### Changed
+- `reddid-web/package.json` — version bumped to `0.4.21`
+
+---
+
+## [0.4.20] — 2026-05-26 — Sprint 1: Security & Integrity
+
+### Added
+
+**S1-01 — editToken expiry (30 days)**
+- `src/lib/store/json-file-store.ts` — `TOKEN_EXPIRY_MS` constant (30 × 24 × 60 × 60 × 1000 ms); `checkEditToken()` private helper validates token match AND age; throws `TOKEN_EXPIRED` if older than 30 days
+- All mutation methods (`updateIdentity`, `createVerificationChallenge`, `confirmSocialProof`, `createAgent`, `addWallet`, `removeWallet`, `setPrimaryWallet`) now call `checkEditToken()` — consistent expiry enforcement across the store
+- V1 grace rule: identities without `editTokenCreatedAt` are treated as never-expired until they next reissue
+- `reissueToken(handle, editToken)` — accepts expired tokens (that's the whole point), still rejects wrong tokens; issues fresh 16-char hex token; returns `{ editToken, expiresAt }`
+- `src/lib/store/interface.ts` — `reissueToken()` added to DataStore contract
+- `src/lib/db.ts` — `reissueToken` shim export
+- `src/app/api/identities/[handle]/token/route.ts` — `POST /api/identities/[handle]/token` endpoint; accepts JSON `{ editToken }`, returns `{ editToken, expiresAt, message }`
+- All API routes that call store mutation methods now map `TOKEN_EXPIRED` → HTTP 401 with descriptive message pointing to reissue endpoint
+
+**S1-02 — Account deletion (`DELETE /api/identities/[handle]`)**
+- `src/lib/store/json-file-store.ts` — `deleteIdentity(handle, editToken)` hard-deletes the identity after `checkEditToken()`; writes a `RevocationEvent` to `db.revocationEvents` (private visibility) before splicing the record — audit trail preserved
+- `src/lib/store/interface.ts` — `deleteIdentity()` added to DataStore contract
+- `src/lib/db.ts` — `deleteIdentity` shim export
+- `src/app/api/identities/[handle]/route.ts` — `DELETE` handler added; requires `{ editToken, confirm: "delete @handle" }` in JSON body to prevent accidental deletion; returns 422 with exact confirmation string required if check fails
+
+**S1-03 — Data export (`POST /api/identities/[handle]/export`)**
+- `src/lib/store/json-file-store.ts` — `exportIdentity(handle, editToken)` returns a full copy of the identity record; `revocationKey` hash omitted (internal security data, not personal data); all other fields including `editToken` and `verificationChallenges` included
+- `src/lib/store/interface.ts` — `exportIdentity()` added to DataStore contract
+- `src/lib/db.ts` — `exportIdentity` shim export
+- `src/app/api/identities/[handle]/export/route.ts` — `POST /api/identities/[handle]/export`; uses POST so editToken stays in the request body (query params appear in server logs); returns `{ exportedAt, format: "reddid-identity-v2", identity }`
+
+**S1-05 — Input sanitization**
+- `src/lib/store/json-file-store.ts` — `sanitizeText(input)` private helper strips HTML tags (`<[^>]*>`) and collapses whitespace; applied to `displayName`, `bio`, `username` (social proof) in `createIdentity()`, `updateIdentity()`, `confirmSocialProof()` — prevents stored XSS
+
+**S1-06 — Handle recovery via revocationKey**
+- `src/lib/store/json-file-store.ts`:
+  - `REVOCATION_KEY_BYTES = 32` constant (64-char hex plaintext; 256 bits of entropy)
+  - `hashRevocationKey(plaintext)` — SHA-256 hash; hash stored in `identity.revocationKey`; plaintext never persisted
+  - `createIdentity()` now generates a real revocationKey at registration time; stores hash in `identity.revocationKey`; returns `{ identity, revocationKeyPlaintext }` (signature change from `Identity` → `{ identity: Identity; revocationKeyPlaintext: string }`)
+  - `recoverByRevocationKey(handle, revocationKey)` — hashes the provided plaintext, compares to stored hash; on match, issues fresh editToken; revocationKey is NOT rotated (single recovery credential, reusable)
+- `src/lib/store/interface.ts` — `createIdentity()` return type updated; `recoverByRevocationKey()` added
+- `src/lib/db.ts` — `createIdentity` and `recoverByRevocationKey` shim exports updated
+- `src/app/api/identities/route.ts` — registration POST returns `{ ..., revocationKey: revocationKeyPlaintext }` alongside `editToken`; both shown once
+- `src/app/api/identities/[handle]/recover/route.ts` — `POST /api/identities/[handle]/recover`; rate-limited (5/IP/hour); accepts `{ revocationKey }`; returns `{ editToken, expiresAt, message }`; maps `NO_RECOVERY_KEY` → 422 with explanation for pre-Sprint-1 accounts
+- `src/lib/rate-limit.ts` — `recover` rate limit added: 5 attempts/IP/hour
+- `src/app/register/page.tsx` — **Recovery key interstitial screen** added: after successful registration, user sees an amber-bordered screen showing the 64-char recovery key with a copy button, a checkbox confirmation ("I have saved my recovery key"), and a "Got it — take me to my tip page →" button (disabled until checkbox checked); redirect to `/${handle}?new=1` only fires after confirmation; recovery key is never placed in a URL parameter
+
+**S1-02 (infra) — Atomic writes**
+- `src/lib/store/json-file-store.ts` — `writeDb()` changed from `writeFileSync(DB_PATH, ...)` to `writeFileSync(DB_PATH + '.tmp', ...)` followed by `renameSync(tmp, DB_PATH)`; on POSIX, `rename()` is atomic at the OS level; on Windows, replaces destination; prevents `db.json` corruption if the process is killed mid-write (resolves VALIDATION_LOG db-001)
+
+### Changed
+- `src/lib/store/interface.ts` — `createIdentity()` return type changed from `Identity` to `{ identity: Identity; revocationKeyPlaintext: string }`; all implementors and callers updated
+- `src/app/api/identities/[handle]/route.ts` — PUT and DELETE both map `TOKEN_EXPIRED` to HTTP 401 with endpoint hint; DELETE requires explicit confirmation string
+- `reddid-web/package.json` — version bumped to `0.4.20`
+
+### Removed
+- `[Unreleased]` item "`DELETE /api/identities/[handle]` self-service account deletion — v0.5" — shipped in Sprint 1 (v0.4.20)
 
 ---
 

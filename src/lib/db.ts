@@ -18,6 +18,7 @@ export type {
   CreateIdentityInput,
   UpdateIdentityInput,
   ReserveSnapshot,
+  StoredAbuseReport,
 } from './types';
 
 // ── Store re-export ───────────────────────────────────────────────────────────
@@ -34,6 +35,8 @@ import type {
   SocialProof,
   CreateIdentityInput,
   UpdateIdentityInput,
+  StoredAbuseReport,
+  ProofMethod,
 } from './types';
 
 export const getIdentityByHandle = (handle: string): Identity | null =>
@@ -53,7 +56,13 @@ export const getAllIdentities = (): Identity[] =>
 export const countIdentities = (): number =>
   _getStore().countIdentities();
 
-export const createIdentity = (input: CreateIdentityInput): Identity =>
+/**
+ * Returns { identity, revocationKeyPlaintext }.
+ * Caller must pass revocationKeyPlaintext to the user exactly once.
+ */
+export const createIdentity = (
+  input: CreateIdentityInput,
+): { identity: Identity; revocationKeyPlaintext: string } =>
   _getStore().createIdentity(input);
 
 export const updateIdentity = (
@@ -61,6 +70,27 @@ export const updateIdentity = (
   editToken: string,
   updates: UpdateIdentityInput,
 ): Identity => _getStore().updateIdentity(handle, editToken, updates);
+
+export const reissueToken = (
+  handle: string,
+  editToken: string,
+): { editToken: string; expiresAt: string } =>
+  _getStore().reissueToken(handle, editToken);
+
+export const deleteIdentity = (handle: string, editToken: string): void =>
+  _getStore().deleteIdentity(handle, editToken);
+
+export const exportIdentity = (
+  handle: string,
+  editToken: string,
+): Omit<Identity, 'revocationKey'> =>
+  _getStore().exportIdentity(handle, editToken);
+
+export const recoverByRevocationKey = (
+  handle: string,
+  revocationKey: string,
+): { editToken: string; expiresAt: string } =>
+  _getStore().recoverByRevocationKey(handle, revocationKey);
 
 export const createVerificationChallenge = (
   handle: string,
@@ -75,16 +105,32 @@ export const confirmSocialProof = (
   username: string,
   proofUrl: string,
   editToken: string,
+  proofMethod?: ProofMethod,
 ): Identity =>
-  _getStore().confirmSocialProof(handle, platform, username, proofUrl, editToken);
+  _getStore().confirmSocialProof(handle, platform, username, proofUrl, editToken, proofMethod);
 
 export const addSocialProof = (
   handle: string,
   proof: Omit<SocialProof, 'addedAt'>,
 ): Identity => _getStore().addSocialProof(handle, proof);
 
+export const removeSocialProof = (
+  handle: string,
+  platform: string,
+  editToken: string,
+): Identity => _getStore().removeSocialProof(handle, platform, editToken);
+
 export const getReserveSnapshot = () =>
   _getStore().getReserveSnapshot();
+
+export const saveAbuseReport = (report: StoredAbuseReport): void =>
+  _getStore().saveAbuseReport(report);
+
+export const getAbuseReports = (): StoredAbuseReport[] =>
+  _getStore().getAbuseReports();
+
+export const markReportReviewed = (reportId: string, note?: string): StoredAbuseReport =>
+  _getStore().markReportReviewed(reportId, note);
 
 /**
  * Serialize an identity for public API consumption.
@@ -104,6 +150,7 @@ export function publicIdentity(identity: Identity): PublicIdentity {
     rddAddress: _addr,
     wallets,
     agents,
+    socialProofs,
     ...rest
   } = identity;
 
@@ -116,9 +163,17 @@ export function publicIdentity(identity: Identity): PublicIdentity {
     .map(({ perTxLimitRdd: _p, dailyLimitRdd: _d, monthlyLimitRdd: _m,
              allowedRecipients: _r, humanApprovalThresholdRdd: _h, ...pub }) => pub as PublicAgent);
 
+  // S3-08: strip proofUrl from public-facing social proofs — it may reveal
+  // content the user has since removed and is not needed by any API consumer.
+  // S3-04: filter out revoked proofs — they should not appear in the public tip page.
+  const publicSocialProofs = (socialProofs ?? [])
+    .filter(p => p.verificationStatus !== 'revoked')
+    .map(({ proofUrl: _pu, ...proof }) => proof);
+
   return {
     ...rest,
     wallets: publicWallets,
     agents: publicAgents,
+    socialProofs: publicSocialProofs,
   };
 }

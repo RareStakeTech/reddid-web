@@ -89,4 +89,6 @@ export const RATE_LIMITS = {
   report: { limit: 5, windowMs: 60 * 60 * 1000 },
   /** Payment intent creation — max 30 per IP per hour */
   paymentCreate: { limit: 30, windowMs: 60 * 60 * 1000 },
+  /** Handle recovery via revocationKey — max 5 per IP per hour (defence-in-depth; key has 256-bit entropy) */
+  recover: { limit: 5, windowMs: 60 * 60 * 1000 },
 } as const satisfies Record<string, RateLimitOptions>;

@@ -30,57 +30,68 @@
 
 ---
 
-## Sprint 1 — Private Beta Polish
-**Goal:** The product is visually and functionally excellent for 10–50 ReddHead early testers.
-**User value:** "I registered, linked my socials, and shared my tip page — and it felt great"
-**Duration:** ~2 weeks
+## Sprint 1 — Security & Integrity ✅ COMPLETE (2026-05-26)
+**Goal:** Close the P0/P1 security gaps identified in Sprint 0. No user-facing feature regressions.
+**User value:** "My handle is protected — tokens expire, I can recover access, and I can delete my account"
+**Duration:** 1 session (2026-05-26)
 
 ### Tasks
 
-| ID | Task | File(s) | Acceptance Criteria |
-|----|------|---------|---------------------|
-| S1-01 | editToken expiry (30-day) | src/lib/store/json-file-store.ts, types.ts | Expired tokens return 401; auto-refresh flow for valid tokens |
-| S1-02 | Account deletion endpoint (DELETE /api/identities/[handle]) | api/identities/[handle]/route.ts | Handle + all data removed; editToken required |
-| S1-03 | Data export endpoint (GET /api/identities/[handle]/export) | New route | Returns JSON dump of all user data; editToken required |
-| S1-04 | Persistent rate limiting (file-backed or memory with TTL) | src/lib/rateLimit.ts | Rate limits survive server restart; per-IP + per-handle |
-| S1-05 | Input sanitization hardening | All API routes | DOMPurify or strip-tags on bio, displayName, website before storage |
-| S1-06 | Handle recovery flow (email or signed challenge) | New page + API | User can prove handle ownership without editToken |
-| S1-07 | /pay/[handle] page — full polish | src/app/pay/[handle]/ | Clean focused payment UX; QR prominent |
-| S1-08 | Better 404 page for /[handle] not found | src/app/not-found.tsx | Suggests /register; links to /explore |
-| S1-09 | Add "verified via challenge-post" tooltip on tip page badges | TrustBadge component | Tooltip explains what trust level means in plain English |
-| S1-10 | Tip card (/card/[handle]) social share optimisation | src/app/card/[handle]/ | WhatsApp / Twitter share buttons; better OG meta |
+| ID | Task | File(s) | Status | Notes |
+|----|------|---------|--------|-------|
+| S1-01 | editToken expiry (30-day) | json-file-store.ts, interface.ts, db.ts, [handle]/token/route.ts | ✅ DONE | `checkEditToken()` added to all mutations; `reissueToken()` + POST endpoint; v1 grace rule |
+| S1-02 | Account deletion (DELETE /api/identities/[handle]) | json-file-store.ts, interface.ts, db.ts, [handle]/route.ts | ✅ DONE | Hard delete + RevocationEvent audit trail; requires `confirm: "delete @handle"` |
+| S1-03 | Data export (POST /api/identities/[handle]/export) | json-file-store.ts, interface.ts, db.ts, [handle]/export/route.ts | ✅ DONE | Full identity dump minus revocationKey hash; editToken required; POST avoids log exposure |
+| S1-04 | Persistent rate limiting | — | ⏳ DEFERRED Sprint 3 | In-memory is acceptable for MVP; deferred to Redis/Upstash integration |
+| S1-05 | Input sanitization | json-file-store.ts | ✅ DONE | `sanitizeText()` strips HTML tags; applied to displayName, bio, socialProof username |
+| S1-06 | Handle recovery via revocationKey | json-file-store.ts, interface.ts, db.ts, [handle]/recover/route.ts, register/page.tsx | ✅ DONE | 64-char hex key; SHA-256 hash stored; plaintext shown once in amber interstitial |
+| S1-06a | Atomic writes | json-file-store.ts | ✅ DONE | `writeDb()` now tmp → rename pattern; resolves VALIDATION_LOG db-001 |
+| S1-07 | /pay/[handle] page — full polish | src/app/pay/[handle]/ | ⏳ Sprint 2 | Moved to Sprint 2 polish sprint |
+| S1-08 | Better 404 page | src/app/not-found.tsx | ✅ DONE (Sprint 0) | Already confirmed passing in Sprint 0 walkthrough |
+| S1-09 | TrustBadge tooltip | TrustBadge.tsx | ✅ DONE (Sprint 0) | Fixed inline during walkthrough |
+| S1-10 | Tip card social share | src/app/card/[handle]/ | ⏳ Sprint 2 | Moved to Sprint 2 polish sprint |
 
-**Risks:**
-- editToken expiry could break existing tokens — migration required
-- Rate limiting implementation needs to not cause false-positive blocks
+### Sprint 1 Build Results (2026-05-26)
+- `tsc --noEmit` → exit 0, zero type errors ✅
+- `npm run lint` → exit 0, zero warnings ✅
+- `npm run build` → exit 0, 39 routes compiled successfully ✅
+  - New routes: `/api/identities/[handle]/export`, `/api/identities/[handle]/recover`, `/api/identities/[handle]/token`
 
-**Must-not-break:**
-- Registration flow (T-01, T-02)
-- Social proof challenge flow (T-04)
-- Love Button popup lookup
-- tsc, lint, build all pass
+**Risks resolved:**
+- ✅ editToken expiry uses existing `editTokenCreatedAt` field — no schema migration required
+- ✅ v1 identities (no `editTokenCreatedAt`) get grace period — no existing user impact
+- ✅ Registration flow T-01/T-02 unaffected (new `revocationKeyPlaintext` in response is additive)
 
 ---
 
-## Sprint 2 — Creator Onboarding & Shareability
+## Sprint 2 — Creator Onboarding & Shareability ✅ COMPLETE (2026-05-26)
 **Goal:** A creator discovers ReddID, registers, and shares their link within 5 minutes. A tipper finds the creator and can copy a payment URI in one click.
 **User value:** "I found a creator I follow, tipped them, and told my friends"
 **Duration:** ~2 weeks
 
 ### Tasks
 
-| ID | Task | File(s) | Acceptance Criteria |
-|----|------|---------|---------------------|
-| S2-01 | One-click share card generator (tip card) | /card/[handle] | Card has "Share on X/Bluesky" pre-filled text with handle + redd.love link |
-| S2-02 | Markdown embed badge (E9) | New snippet page or API | Returns `[![Tip me Ɍ RDD](badge.svg)](redd.love/@handle)` copyable |
-| S2-03 | Platform registration page (/platforms) — polish | src/app/platforms/ | Shows all 13 live + 4 planned platforms; extension download link |
-| S2-04 | Registration success email (optional/deferred) | (no backend email yet) | At minimum: show recovery instructions on success page |
-| S2-05 | Animated creator onboarding — post-registration flow | After /?new=1 | Step-by-step: "Your tip page ✓ → Link socials → Share link" guide |
-| S2-06 | Leaderboard / "popular creators" explore view | /explore | Sort by social proof count; no fake metric |
-| S2-07 | Platform deep-link from Love Button popup | popup.js | "View on Twitter" link next to detected handle in popup |
-| S2-08 | Love Button v2.11 — E10 RDD address detection | content scripts | Scan page for R[A-Za-z0-9]{33} / rdd1[a-z0-9]{39}; context menu "Look up on ReddID" |
-| S2-09 | ISR on tip pages (revalidate=60) | src/app/[handle]/page.tsx | Remove force-dynamic; add revalidate=60; verify cache invalidation on edit |
-| S2-10 | /sitemap.xml includes all registered handles | src/app/sitemap.ts | All registered handles in sitemap; verify in browser |
+| ID | Task | File(s) | Status | Notes |
+|----|------|---------|--------|-------|
+| S2-01 | One-click share card generator (tip card) | /card/[handle]/CardClientButtons.tsx | ✅ DONE | "Share on 𝕏" intent URL + "WhatsApp" deep link with pre-filled text |
+| S2-02 | Markdown embed badge (E9) | api/badge/[handle]/route.ts, tip page | ✅ DONE | SVG badge API + "Copy Markdown" snippet on tip page |
+| S2-03 | Platform registration page (/platforms) — polish | src/app/platforms/ | ✅ EXISTS | Page already built; quality sufficient for beta |
+| S2-04 | Registration success email (optional/deferred) | — | ⏳ DEFERRED | No backend email until Railway + Resend; recovery key interstitial serves this purpose in v0.4 |
+| S2-05 | Creator onboarding post-registration flow | src/app/[handle]/page.tsx | ✅ DONE | 3-step guide: ① Live ✓ ② Verify socials → ③ Share handle |
+| S2-06 | "Most verified" explore sort | src/app/explore/page.tsx | ✅ DONE | Third sort option: descending by verified social proof count |
+| S2-07 | Platform deep-link from Love Button popup | popup.js | ⏳ Sprint 3 | Requires Love Button update; deferred |
+| S2-08 | Love Button v2.11 — E10 RDD address detection | content scripts | ⏳ Sprint 3 | Complex content script change; deferred |
+| S2-09 | ISR on tip pages (revalidate=60) | src/app/[handle]/page.tsx | ⏳ DEFERRED Sprint 4 | `searchParams` forces dynamic; even without it, `revalidate` is incompatible with the JSON-file store (no cache invalidation hook). Revisit when SQLite migration lands. |
+| S2-10 | /sitemap.xml includes all registered handles | src/app/sitemap.ts | ✅ EXISTS | `src/app/sitemap.ts` already calls `getAllIdentities()` and emits one URL per non-revoked handle |
+| S2-11 | TOKEN_EXPIRED inline recovery on edit & verify pages | edit/[handle]/page.tsx, verify/page.tsx | ✅ DONE | When any mutation returns 401 + "expired", an amber panel replaces the raw error; one-click "Reissue token" calls POST `/token`, writes new token to localStorage, clears the expiry state |
+
+### Fixes in Sprint 2
+- `src/lib/platforms.ts` — Nostr icon collision fixed (was `⚡` same as Kick; changed to `◆`)
+
+### Sprint 2 Final Build Results (2026-05-26)
+- `tsc --noEmit` → exit 0 ✅
+- `npm run lint` → exit 0 ✅
+- `npm run build` → exit 0 ✅
 
 **Gamification rules applied (S2-06):**
 - Sort by social proof count is informational, not scored or ranked publicly as "top"
@@ -97,24 +108,30 @@
 
 ---
 
-## Sprint 3 — Trust & Verification
+## Sprint 3 — Trust & Verification ✅ COMPLETE (2026-05-26)
 **Goal:** "Verified" in v0.4 is trust-based. Sprint 3 makes it real — or at minimum honest about its limits with a clear path to v0.5.
 **User value:** "I know this creator's social accounts are linked to their wallet in a way I can trust"
 **Duration:** ~3 weeks
 
 ### Tasks
 
-| ID | Task | File(s) | Acceptance Criteria |
-|----|------|---------|---------------------|
-| S3-01 | Fetch and confirm challenge post (server-side URL check) | api/verify/confirm/route.ts | Server actually fetches proofUrl and searches for challenge code in the response |
-| S3-02 | Platform-specific scrapers / API calls for verification | New lib/verifiers/*.ts | At minimum: GitHub (public profile), Reddit (JSON API), Twitter (rate-limited) |
-| S3-03 | Distinguish trust-based vs. fetched-verified in UI | TrustBadge, popup.js | 'challenge-post-verified' stays; add 'url-fetch-verified' trust level |
-| S3-04 | Revoke social proof | api/verify/[handle]/revoke | User can remove a linked account; badge disappears immediately |
-| S3-05 | Re-verify expired proofs | Verify page | Show "re-verify" option if proofUrl returns 404 |
-| S3-06 | Wallet signature verification (v0.5 foundation) | lib/walletSig.ts | reddcoinjs-lib sign/verify flow; store signature with wallet link |
-| S3-07 | Abuse reporting pipeline | api/report + admin view | Reports stored; admin review queue accessible to Jay |
-| S3-08 | Privacy-preserving proof storage | json-file-store.ts | proofUrl stored but not exposed in publicIdentity() |
-| S3-09 | Trust level badge tooltips — all levels explained | TrustBadge | Each level has a plain-English tooltip users can understand |
+| ID | Task | File(s) | Status | Notes |
+|----|------|---------|--------|-------|
+| S3-01 | Fetch and confirm challenge post (server-side URL check) | api/verify/confirm/route.ts, lib/proof-fetcher.ts | ✅ DONE | `fetchProofUrl()` fetches URL (5s timeout, 512KB cap); 422 CODE_NOT_FOUND / 503 FETCH_FAILED on failure; upgrades to 'url-fetch-verified' proofMethod on success |
+| S3-02 | Platform-specific scrapers / API calls for verification | lib/proof-fetcher.ts | ✅ PARTIAL | Generic URL fetch covers GitHub, Reddit, Mastodon, Bluesky (public HTML); Twitter/X and Instagram require auth headers — deferred to Sprint 4 with platform-specific verifier modules |
+| S3-03 | Distinguish trust-based vs. fetched-verified in UI | TrustBadge, edit page, tip page | ✅ DONE | 'url-fetch-verified' added to ProofMethod + TrustLevel; green "URL Verified" badge; tip page mapping updated; edit page StatusBadge updated |
+| S3-04 | Revoke social proof | api/identities/[handle]/socials/[platform]/route.ts, edit page | ✅ DONE | `removeSocialProof()` sets verificationStatus='revoked'; hidden from publicIdentity(); Trash button in edit page with confirm dialog |
+| S3-05 | Re-verify expired proofs | Verify page, edit page | ✅ DONE | StatusBadge shows "Challenge Expired" (orange); "Verify →" changes to "Re-verify →" for expired/failed proofs; link passes `?username=` to pre-fill verify form |
+| S3-06 | Wallet signature verification (v0.5 foundation) | lib/walletSig.ts | ⏳ Sprint 4 | Deferred — reddcoinjs-lib integration |
+| S3-07 | Abuse reporting pipeline | api/admin/reports, admin/reports page | ✅ DONE | Reports persisted to db.json abuseReports[]; GET/POST /api/admin/reports (Bearer token auth); /admin/reports?secret=<ADMIN_SECRET> triage queue UI |
+| S3-08 | Privacy-preserving proof storage | types.ts, db.ts | ✅ DONE | `PublicSocialProof` type omits proofUrl; `publicIdentity()` strips it; revoked proofs also filtered |
+| S3-09 | Trust level badge tooltips — all levels explained | TrustBadge | ✅ EXISTS | LEVEL_CONFIG already has plain-English tooltip for each level via `title` attribute |
+
+### Sprint 3 Final Build Results (2026-05-26, v0.4.24) ✅ COMPLETE
+- `tsc --noEmit` → exit 0 ✅
+- `npm run lint` → exit 0 ✅
+- `npm run build` → exit 0, 45 routes compiled ✅
+  - New routes: `/admin/reports`, `/api/admin/reports`
 
 **Gamification rules applied:**
 - 'url-fetch-verified' badge is informational — not a score or rank
@@ -135,28 +152,54 @@
 ## Sprint 4 — Production Readiness
 **Goal:** The product can handle real users without corrupting data or leaking tokens. Deploy to Railway.
 **User value:** "The site is always up, fast, and safe"
-**Duration:** ~3 weeks
+**Duration:** ~3 weeks (realistic: 4 weeks if CWS prep is included)
+
+### Recommended execution order (architect-reviewed 2026-05-26)
+
+**Phase 1 — Foundation (must happen first, in sequence):**
+1. S4-05 — Confirm env var coverage (Railway secrets, ADMIN_SECRET, DB_ENGINE key)
+2. S4-01 + S4-03 — SQLite store + WAL mode (inseparable; one implementation task)
+3. S4-02 — Migration script (run against copy of db.json first; verify row counts)
+4. S4-04 — Railway deployment (Checkpoint 1: deploy with JSON store; Checkpoint 2: flip to SQLite)
+
+**Phase 2 — Hardening (can parallelize after Phase 1):**
+5. S4-07 + S4-08 — HTTPS + security headers (same session; ~20 lines in next.config.ts)
+6. S4-06 — Rate limiting (SQLite-backed preferred over Upstash for single-instance Railway)
+
+**Phase 3 — Quality and submission (last; S4-10 moved to Sprint 5):**
+7. S4-11 — Chrome Web Store submission (screenshots + tile are Jay-work; start in parallel)
+8. S4-09 — CI cleanup (already live; add test step when Sprint 5 tests land)
 
 ### Tasks
 
-| ID | Task | File(s) | Acceptance Criteria |
-|----|------|---------|---------------------|
-| S4-01 | SQLite data store (better-sqlite3) | src/lib/store/sqlite-store.ts | Passes all DataStore interface methods; atomic writes; indexed queries |
-| S4-02 | Migration script (data/db.json → SQLite) | scripts/migrate-to-sqlite.ts | All existing identities preserved; checksums verified |
-| S4-03 | Atomic writes + WAL mode | sqlite-store.ts | No corruption under concurrent requests |
-| S4-04 | Railway deployment | railway.toml or Dockerfile | Live at redd.love; zero-downtime deploys |
-| S4-05 | Environment variable management | .env.local + Railway | No secrets in code; all via env |
-| S4-06 | Rate limiting via Redis or Upstash | src/lib/rateLimit.ts | Persists across restarts; per-IP and per-handle |
-| S4-07 | HTTPS enforcement | Next.js config | Redirect all HTTP → HTTPS |
-| S4-08 | Security headers (CSP, HSTS, X-Frame-Options) | next.config.ts | Passes securityheaders.com check |
-| S4-09 | CI pipeline (GitHub Actions) | .github/workflows/ci.yml | On every push: tsc, lint, build — must all pass |
-| S4-10 | Automated test suite (basic) | tests/ | At minimum: API integration tests for register, lookup, verify |
-| S4-11 | Chrome Web Store submission | love-button/store/ | Screenshots, description, privacy policy URL, submission complete |
-| S4-12 | editToken rotation endpoint | api/identities/[handle]/token | Allows re-issuing a new token if old one is compromised |
+| ID | Task | File(s) | Acceptance Criteria | Status |
+|----|------|---------|---------------------|--------|
+| S4-01 | SQLite data store (better-sqlite3) | src/lib/store/sqlite-store.ts | Passes all DataStore interface methods; WAL mode; atomic writes | [ ] |
+| S4-02 | Migration script (data/db.json → SQLite) | scripts/migrate-to-sqlite.ts | All existing identities preserved; checksums verified; reversible via REDDID_DB_ENGINE=json | [ ] |
+| S4-03 | Atomic writes + WAL mode | sqlite-store.ts | Part of S4-01 — no corruption under concurrent requests | (see S4-01) |
+| S4-04 | Railway deployment | railway.toml | Live at redd.love; persistent volume at /app/data; zero-downtime deploys | [ ] |
+| S4-05 | Environment variable management | src/lib/config.ts, .env.example | All required vars documented; REDDID_DB_ENGINE, ADMIN_SECRET, DB_PATH confirmed | ✅ DONE v0.4.26 |
+| S4-06 | Rate limiting (SQLite-backed) | src/lib/rate-limit.ts | rate_limit_counters table; persists across restarts; per-IP and per-handle | [ ] |
+| S4-07 | HTTPS enforcement | next.config.ts | Redirect all HTTP → HTTPS via x-forwarded-proto check | ✅ DONE v0.4.26 |
+| S4-08 | Security headers (CSP, HSTS, X-Frame-Options) | next.config.ts | HSTS + CSP + X-Frame-Options + Referrer-Policy + Permissions-Policy applied | ✅ DONE v0.4.26 |
+| S4-09 | CI pipeline (GitHub Actions) | .github/workflows/ci.yml | ✅ Already live — tsc, lint, build on every push. Add test step in Sprint 5. | ✅ EXISTS |
+| S4-10 | Automated test suite (basic) | tests/ | **MOVED TO SPRINT 5** — see S5-10. Write after SQLite migration stabilises. | → Sprint 5 |
+| S4-11 | Chrome Web Store submission | love-button/store/ | Screenshots (S8), 1280×800 tile (S9), CWS account (S13), submission complete | [ ] |
+| ~~S4-12~~ | ~~editToken rotation endpoint~~ | ~~—~~ | **REMOVED — duplicate of Sprint 1 S1-01.** POST /api/identities/[handle]/token is live. | ✅ DONE (S1-01) |
+
+### migrate.ts atomic write fix (2026-05-26)
+`runMigrations()` previously called `fs.writeFileSync()` directly, bypassing the tmp→rename protection.
+Fixed: now writes to `DB_PATH + '.migrate.tmp'` then `renameSync` to `DB_PATH` — consistent with `writeDb()`.
+
+### Known traps (architect review)
+- **better-sqlite3 native build**: needs build tools on Railway; pin Node version to match CI (Node 24)
+- **migrate.ts / SQLite conflict**: when `REDDID_DB_ENGINE=sqlite`, skip `runMigrations()` (JSON-only); SQLite store bootstraps its own schema in the constructor
+- **Railway multi-instance**: SQLite on a shared volume breaks under auto-scaling. Single-instance only in v0.4. Document in ARCHITECTURE.md.
+- **CWS review lag**: Chrome Web Store takes 7–14 days post-submission. Start screenshots/tile NOW, in parallel with server work.
 
 **Risks:**
-- SQLite migration is the highest-risk operation — must have backup of data/db.json before running
-- Railway deployment requires environment variable setup and review
+- SQLite migration is the highest-risk operation — checkpoint deploy with JSON store first; keep db.json on volume as fallback
+- Railway deployment: persistent volume must be configured before first deploy or db.json is lost on redeploy
 
 **Must-not-break:**
 - ALL existing UX test scenarios (T-01 through T-15)
@@ -180,8 +223,10 @@
 | S5-05 | ReddID badge for creator websites | /badge/[handle] | Returns SVG `Ɍ Accept RDD tips` badge; embeddable |
 | S5-06 | Explore trending — by verification completeness | /explore | Sort by "most verified links" — factual, not gamified |
 | S5-07 | "Did you tip?" follow-up nudge | (browser-side only) | Love Button popup: "Did you send that tip? Here's the address again" — opt-in |
-| S5-08 | Firefox AMO submission | love-button-firefox/ | Extension live on addons.mozilla.org |
+| S5-08 | Firefox AMO submission | love-button-firefox/ | Extension live on addons.mozilla.org; source zip uploaded (AMO MV3 requirement) |
 | S5-09 | Community page (/community) | New page | Links to ReddCoin Discord, Reddit, GitHub; "How to become a ReddHead" |
+| S5-10 | Automated test suite (moved from S4-10) | tests/ | vitest + supertest; API integration tests for register, lookup, verify, token; must pass in CI | **Gate item — required before any S5 growth features ship** |
+| S5-11 | Wallet signature verification (reddcoinjs-lib) | src/lib/walletSig.ts | ECDSA `verifymessage` via reddcoinjs-lib; `/api/identities/[handle]/wallets/[id]/verify`; feeds trust score | Moved from S3-06; enables real wallet-signature-verified badge |
 
 **Gamification rules applied (S5-01, S5-03, S5-06):**
 - Trust score = count of independently verified proofs — a fact, not a gamified score

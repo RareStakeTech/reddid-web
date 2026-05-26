@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
-import { getIdentityByHandle } from '@/lib/db';
+import { getIdentityByHandle, saveAbuseReport } from '@/lib/db';
 import { sanitizeHandle, isValidUrl } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import type { AbuseReportCategory } from '@/lib/types';
@@ -9,10 +9,10 @@ import type { AbuseReportCategory } from '@/lib/types';
  * POST /api/report
  * Body: { reportedHandle, category, description, evidenceUrl? }
  *
- * Submits an abuse report. Reports are logged server-side.
+ * Submits an abuse report. Reports are persisted in db.json.
  *
- * v0.4: Reports are logged to console only. No persistence yet.
- * v0.5: Persist to db.json abuseReports[] or a dedicated reports service.
+ * S3-07 (2026-05-26): Reports now persist to abuseReports[] in db.json.
+ * Admin review UI: GET /admin/reports (protected by ADMIN_SECRET env var).
  *
  * Rate limit: 5 per IP per hour to prevent report spam.
  * IP is hashed with SHA-256 before any logging — raw IPs are never stored.
@@ -69,15 +69,18 @@ export async function POST(request: NextRequest) {
   const report = {
     id: crypto.randomBytes(6).toString('hex'),
     reportedHandle,
-    reporterIpHash: ipHash,
+    reporterIp: ipHash,           // matches AbuseReport interface field name (hashed value)
     category,
     description,
     evidenceUrl,
     createdAt: new Date().toISOString(),
+    reviewed: false,
+    reviewedAt: null,
+    reviewNote: null,
   };
 
-  // v0.4: log to server console. v0.5: persist to db.json abuseReports[].
-  console.log('[AbuseReport]', JSON.stringify(report));
+  // S3-07: persist to db.json abuseReports[]. Admin view at /admin/reports.
+  saveAbuseReport(report);
 
   return Response.json({ ok: true, reportId: report.id }, { status: 201 });
 }

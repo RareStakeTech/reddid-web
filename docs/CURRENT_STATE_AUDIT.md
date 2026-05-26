@@ -1,5 +1,5 @@
 # ReddID Current State Audit
-**Date:** 2026-05-26 | **Auditor:** Combined virtual team (architect, QA, PM, security, UX)
+**Date:** 2026-05-26 (updated post-Sprint 3 / v0.4.23) | **Auditor:** Combined virtual team (architect, QA, PM, security, UX)
 **Guiding rule:** No castles on fog. Features are only marked Real if code exists, can be built, and behaves honestly.
 
 ---
@@ -24,13 +24,15 @@
 |---------|--------|----------|-------|
 | Handle registration (POST /api/identities) | ✅ REAL | `src/app/api/identities/route.ts` | Validates format, checks uniqueness, stores to data/db.json |
 | Handle lookup (GET /api/identities/[handle]) | ✅ REAL | Same file | Returns publicIdentity(); strips editToken |
-| editToken bearer auth | 🟡 PARTIAL | `json-file-store.ts` | 16-char hex token; **no expiry field**; stored only in user's localStorage |
+| editToken bearer auth | ✅ REAL | `json-file-store.ts` | 16-char hex token; **30-day expiry enforced** via `checkEditToken()`; stored in user's localStorage |
+| editToken reissue | ✅ REAL | `src/app/api/identities/[handle]/token/route.ts` | `POST` with expired token accepted; issues new token; TOKEN_EXPIRED UX on edit + verify pages |
+| Handle recovery (revocationKey) | ✅ REAL | `src/app/api/identities/[handle]/recover/route.ts` | 64-char hex key shown once at registration; SHA-256 hash stored; rate-limited 5/IP/hr |
 | Handle availability check (debounced) | ✅ REAL | `src/app/register/page.tsx` | 350ms debounce, live API call |
 | Display name (60 char max) | ✅ REAL | `json-file-store.ts` line ~120 | Truncated server-side |
 | Bio (160 char max) | ✅ REAL | `json-file-store.ts` + register form | Form maxLength=160; store truncates to 160; consistent |
 | Website field | ✅ REAL | Register form + store | No URL validation beyond HTML type="url" |
-| Handle delete / account wipe | 🔲 PLANNED | No route exists | Not built; editToken revocation not implemented |
-| Data export (GDPR-style) | 🔲 PLANNED | No route exists | Not built |
+| Handle delete / account wipe | ✅ REAL | `src/app/api/identities/[handle]/route.ts` (DELETE) | Requires editToken + `"delete my account"` confirmation string |
+| Data export (GDPR-style) | ✅ REAL | `src/app/api/identities/[handle]/export/route.ts` | POST with editToken; returns full identity JSON |
 
 ---
 
@@ -42,7 +44,7 @@
 | Address type detection (legacy/segwit/testnet) | ✅ REAL | `src/lib/validation.ts`, AddressTypeBadge | Regex-based; not cryptographic |
 | BIP21 URI construction | ✅ REAL | `buildBip21Uri()` in validation.ts | Used for QR and quick-tip amounts |
 | QR code display | ✅ REAL | `QRCodeDisplay` component via react-qr-code | Renders BIP21 URI |
-| Multiple wallet links (v2 — /api/identities/[handle]/wallets) | 🔵 API-ONLY | `wallets/route.ts` exists | Full CRUD API; **no UI to manage wallet list** |
+| Multiple wallet links (v2 — /api/identities/[handle]/wallets) | ✅ REAL | `wallets/route.ts` + `/edit/[handle]` page | Full CRUD API + wallet management section in edit page (Sprint 2) |
 | Wallet signature verification | 🔲 PLANNED | Mentioned in homepage beta notice | Deferred to v0.5 |
 | primaryRddAddress() helper | ✅ REAL | `src/lib/types.ts` | Prefers wallets[] first, falls back to deprecated rddAddress |
 
@@ -71,9 +73,11 @@
 | Social proof storage (13 platforms) | ✅ REAL | SocialProof[] in types.ts + store | Stored per-identity |
 | Challenge-post flow (/verify page) | ✅ REAL | `src/app/verify/page.tsx` | 3-step: form → challenge code → confirm |
 | Challenge code generation (POST /api/verify/challenge) | ✅ REAL | `verify/challenge/route.ts` | Generates unique code, stores in verificationChallenges[] |
-| Proof confirmation (POST /api/verify/confirm) | ⚠ NEEDS LABEL | `verify/confirm/route.ts` + `confirmSocialProof()` | Sets verificationStatus='verified' but **does NOT fetch the URL to confirm it exists**. Trust-based only. |
-| Platform API auto-verification | 🔲 PLANNED | Comment in store: "v0.5: auto-verify via platform API" | Not built |
-| verificationStatus field | ⚠ NEEDS LABEL | types.ts | 'verified' in v0.4 means "user declared a proof URL" — not independently checked |
+| Proof confirmation (POST /api/verify/confirm) | ⚠ NEEDS LABEL | `verify/confirm/route.ts` + `confirmSocialProof()` | Sets verificationStatus='verified' but **does NOT fetch the URL to confirm it exists**. Trust-based only. TrustBadge tooltip is explicit about this. |
+| Social proof revocation | ✅ REAL | `src/app/api/identities/[handle]/socials/[platform]/route.ts` | DELETE with editToken; soft-delete via verificationStatus='revoked'; filtered from public API |
+| Platform API auto-verification | 🔲 PLANNED | Sprint 3 S3-01 (pending) | Server-side URL fetch not yet implemented |
+| verificationStatus field | ⚠ NEEDS LABEL | types.ts | 'verified' in v0.4 means "user declared a proof URL" — not independently checked. TrustBadge tooltip is explicit. |
+| proofUrl privacy | ✅ REAL | `src/lib/db.ts` publicIdentity() + types.ts PublicSocialProof | proofUrl stored server-side for future verification; stripped from all public API responses |
 | Trust level display on tip page | ✅ REAL | TrustBadge component, PlatformBadge | Shows 'challenge-post-verified' vs 'self-reported' |
 | Social proofs in Love Button popup | ✅ REAL | popup.js E7 — renderSocialProofs() | Green ● for verified, grey ○ for self-reported |
 | Profile URL links from badges | ✅ REAL | socialProfileUrl() in popup.js, platformProfileUrl() in platforms.ts | Links to actual platform profiles |
@@ -141,11 +145,11 @@
 |---------|--------|----------|-------|
 | JsonFileDataStore | ✅ REAL | `src/lib/store/json-file-store.ts` | Flat JSON (data/db.json); fully functional |
 | DataStore interface (getStore() abstraction) | ✅ REAL | `src/lib/store/interface.ts` | Clean swap boundary for SQLite |
-| Atomic writes | 🔴 STALE/MISSING | json-file-store.ts | writeDb() overwrites file — no fsync, no temp+rename; corruption risk under concurrent writes |
-| SQLite/Turso data store | 🔲 PLANNED | No better-sqlite3 in package.json | Not started |
-| Rate limiting (in-memory) | 🟡 PARTIAL | API routes | Exists but resets on every server restart; not suitable for production |
-| Input sanitization | 🟡 PARTIAL | Zod validation in API routes | Present; no DOMPurify or server-side HTML strip layer |
-| editToken expiry | 🔲 PLANNED | No expiry field in schema | Tokens never expire |
+| Atomic writes | ✅ REAL | `json-file-store.ts` writeDb() | tmp → renameSync pattern; partial-write corruption prevented |
+| SQLite/Turso data store | 🔲 PLANNED | No better-sqlite3 in package.json | Not started (Sprint 4) |
+| Rate limiting (in-memory) | 🟡 PARTIAL | API routes (`src/lib/rate-limit.ts`) | Registration 3/IP/hr, recovery 5/IP/hr, challenges 5/handle/day. **Resets on server restart** — not suitable for production |
+| Input sanitization | 🟡 PARTIAL | Zod validation + sanitizeText() in API routes | Present; no DOMPurify or server-side HTML strip layer |
+| editToken expiry | ✅ REAL | `json-file-store.ts` checkEditToken() | 30-day expiry enforced on all mutation routes; TOKEN_EXPIRED 401 with reissue hint |
 | Reserve snapshot | 🟠 MOCK/DEMO | getReserveSnapshot() | Returns hardcoded zeros + isLive: false |
 | Live balance (blockbook.reddcoin.com) | ✅ REAL | LiveBalance component, background.js | External call; depends on Reddcoin blockbook availability |
 | ISR / static generation | 🟡 PARTIAL | All pages use `force-dynamic` | Could use revalidate=60 on tip pages; currently all SSR |
@@ -193,21 +197,25 @@
 
 ## Summary Scorecard
 
+*Updated post-Sprint 3 (v0.4.23)*
+
 | Category | Real | Partial | Mock | Planned |
 |----------|------|---------|------|---------|
-| Core identity | 7 | 1 | 0 | 2 |
-| Wallet/address | 4 | 0 | 0 | 2 |
+| Core identity | 10 | 0 | 0 | 0 |
+| Wallet/address | 5 | 0 | 0 | 1 |
 | Tip/pay flow | 7 | 0 | 1 | 1 |
-| Social proof | 5 | 0 | 0 | 1 |
+| Social proof | 7 | 1 | 0 | 1 |
 | Explore/discovery | 7 | 0 | 0 | 0 |
 | Love Button | 15 | 2 | 0 | 2 |
 | Agent delegation | 4 | 0 | 0 | 3 |
-| Infrastructure | 2 | 3 | 1 | 4 |
+| Infrastructure | 4 | 2 | 1 | 3 |
 | Supporting pages | 13 | 1 | 2 | 0 |
-| **TOTAL** | **64** | **7** | **4** | **15** |
+| **TOTAL** | **72** | **6** | **4** | **11** |
 
-**Bottom line:** The product is substantially real. The honest summary is:
-- Tip pages, registration, social proof flow, explore, Love Button — all real and functional
-- Reserve, bridge, and payment intents are clearly mock/demo and need visible labels
-- Agent delegation has real API infrastructure but zero UI
-- SQLite, deployment, editToken expiry, account deletion are not started
+**Bottom line (v0.4.23):** Sprint 1–3 substantially closed the security and trust gaps.
+- editToken expiry, recovery key, atomic writes, account deletion, data export — all real
+- Social proof revocation and proofUrl privacy implemented
+- Wallet management UI now functional on edit page
+- Reserve, bridge, and payment intents are still mock/demo with visible labels
+- Agent delegation has real API but zero UI (Sprint 6)
+- SQLite migration, CI pipeline, Redis rate limiting, server-side proof verification remain planned

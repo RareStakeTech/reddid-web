@@ -14,11 +14,16 @@ Part of the [ReddRails](https://github.com/RareStakeTech) ecosystem by [Rare Sta
 | `@handle` registration with RDD wallet | ✅ Live |
 | Public tip page with BIP21 QR codes | ✅ Live |
 | Social proof verification (challenge-post) | ✅ Live |
+| Social proof verification (server-side URL fetch) | ✅ Live |
+| Social proof revocation | ✅ Live |
+| editToken expiry (30-day) + reissue | ✅ Live |
+| Handle recovery via revocationKey | ✅ Live |
+| Account delete + data export | ✅ Live |
 | Shareable tip card (`/card/@handle`) | ✅ Live |
 | Live session simulator (`/live/@handle`) | ✅ Live (demo) |
 | Creator explore directory | ✅ Live |
+| Wallet management UI | ✅ Live |
 | Agent identity delegation | ✅ API ready |
-| Wallet multi-chain management | ✅ API ready |
 | Payment intent creation | ✅ API ready (mock) |
 | Reserve dashboard | 🔲 Placeholder |
 | ReddRail state-channel tips | 🔲 Planned (v0.5+) |
@@ -67,10 +72,11 @@ All external integrations (signing, credentials, bridge status) are behind typed
 
 Identities are stored at `data/db.json`. Each identity has:
 - `wallets[]` — canonical multi-chain wallet list (v2); `rddAddress` kept for migration compat
-- `socialProofs[]` — verified social links with trust levels
+- `socialProofs[]` — verified social links with trust levels; `proofUrl` stored server-side only, never in public API
 - `agents[]` — delegated sub-identities with spend limits
 - `verificationChallenges` — ephemeral 8-hour challenge codes (private, never exposed)
-- `editToken` — 16-char hex, stored client-side only; required for mutations
+- `editToken` — 16-char hex, stored client-side only; expires after 30 days; reissueable
+- `revocationKey` — 64-char hex shown once at registration (SHA-256 hash stored); enables account recovery if editToken is lost
 
 ### Trust levels
 
@@ -93,15 +99,23 @@ Identities are stored at `data/db.json`. Each identity has:
 |---|---|---|
 | POST | `/api/identities` | Register a new handle |
 | GET/PATCH | `/api/identities/[handle]` | Get or update an identity |
+| DELETE | `/api/identities/[handle]` | Delete identity (requires editToken + confirmation) |
+| POST | `/api/identities/[handle]/export` | Export full identity data (GDPR) |
+| POST | `/api/identities/[handle]/recover` | Recover editToken using revocationKey |
+| POST | `/api/identities/[handle]/token` | Reissue expired editToken |
 | POST | `/api/verify/challenge` | Generate a verification challenge |
 | POST | `/api/verify/confirm` | Record a social proof |
+| GET/DELETE | `/api/identities/[handle]/socials/[platform]` | Get or revoke a social proof |
 | GET/POST | `/api/identities/[handle]/wallets` | List or add wallets |
 | PATCH/DELETE | `/api/identities/[handle]/wallets/[id]` | Set primary or remove wallet |
 | GET/POST | `/api/agents/[handle]` | List or create agents |
 | DELETE | `/api/agents/[handle]/[id]` | Revoke an agent |
+| GET | `/api/identities/by-social` | Look up identity by platform + username |
+| GET | `/api/badge/[handle]` | Trust badge data for a handle |
 | POST | `/api/payments` | Create a payment intent |
 | GET/DELETE | `/api/payments/[id]` | Get or cancel payment intent |
-| POST | `/api/report` | Submit an abuse report |
+| POST | `/api/report` | Submit an abuse report (persisted to db.json) |
+| GET/POST | `/api/admin/reports` | Admin: list or mark-reviewed abuse reports (Bearer token) |
 | GET | `/api/explore` | Browse public identities |
 | GET | `/api/search` | Fuzzy search handles |
 
@@ -133,12 +147,15 @@ Extended documentation lives in `docs/`:
 - **No live bridge** — bridge and wRDD features are placeholders pending Gajumaru QPQ
 - **No mandatory KYC** — identity is opt-in and self-sovereign
 - **editToken is NOT for agent operations** — agents use their own `controllerKey`
+- **editToken expires after 30 days** — UI prompts reissue; recovery via `revocationKey` if lost
+- **Loss of editToken is recoverable** — use the `revocationKey` shown at registration with `POST /api/identities/[handle]/recover`
+- **proofUrl is private** — social proof URLs are stored server-side only and never returned in public API responses
 - **Mock labels required** — any demo/simulated surface must show a visible mock label
 
 ---
 
 ## Development status
 
-v0.4 sprint complete. See `docs/ROADMAP.md` for the v0.5 plan.
+v0.4 Sprints 1–3 complete. Sprint 4 is production readiness (SQLite, Railway deploy, Redis rate limiting, CI pipeline). See `docs/ROADMAP.md` and `docs/SPRINT_PLAN.md` for the full plan.
 
 GitHub: [github.com/RareStakeTech/reddid-web](https://github.com/RareStakeTech/reddid-web)

@@ -187,7 +187,7 @@ export const PLATFORMS: PlatformDef[] = [
   {
     id: 'nostr',
     name: 'Nostr',
-    icon: '⚡',
+    icon: '◆',
     color: '#7C3AED',
     status: 'planned',
     category: 'decentralized',

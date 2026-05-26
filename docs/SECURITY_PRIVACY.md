@@ -1,7 +1,7 @@
 # Security and Privacy — ReddWeb
 
-**Last updated:** 2026-05-25  
-**Status:** Prototype — some controls are designed but not yet fully implemented.
+**Last updated:** 2026-05-26  
+**Status:** Prototype — core security controls implemented through Sprint 3. Some controls remain scaffolded or deferred.
 
 ---
 
@@ -82,11 +82,12 @@
 - editToken is stored in `localStorage`, not a cookie — not automatically sent with requests
 - editToken is 16-char hex (~64 bits of entropy) — not guessable
 - The server never returns editToken in GET responses
-- `editTokenCreatedAt` stored for future rotation/expiry enforcement
+- Tokens expire after **30 days** — `checkEditToken()` enforced on every mutation route
+- Expired token returns 401 with `{"error":"TOKEN_EXPIRED","hint":"POST /api/identities/{handle}/token"}` — client shows one-click reissue UI
 
-**Recovery path (v0.3):** None. If editToken is lost, profile edits are blocked. Handle still receives tips at the registered address. Contact rarestaketech@gmail.com for manual reset.
+**Recovery path (v0.4):** A `revocationKey` (64-char hex) is shown once at registration and stored as a SHA-256 hash in the database. If the editToken is lost or expired, `POST /api/identities/[handle]/recover` with the plaintext revocationKey issues a fresh editToken. This endpoint is rate-limited to 5 attempts per IP per hour.
 
-**Documentation requirement:** All edit-gated UI must clearly warn: "Your edit token is stored in this browser only. There is no password recovery in this version."
+**Accounts without revocationKey:** Identities registered before Sprint 1 (v0.4.20) have `revocationKey: null`. The `/recover` endpoint returns `422 NO_RECOVERY_KEY` for these — manual reset via rarestaketech@gmail.com remains the only option.
 
 ---
 
@@ -124,9 +125,9 @@
 
 **Risk:** The flat `data/db.json` file is directly readable and writable by anyone with server filesystem access.
 
-**Current state:** Prototype-only. Single-process, no concurrent write protection. No encryption at rest.
+**Current state (v0.4):** `writeDb()` uses a temp-file + `renameSync` pattern — partial-write corruption is prevented. Single-process only; no multi-process coordination.
 
-**Mitigation:** Documented as prototype behavior. Production deployment must use Turso/Postgres with proper access controls.
+**Remaining gap:** No encryption at rest. Production deployment must use Turso/Postgres/SQLite with proper access controls (Sprint 4).
 
 ---
 
@@ -144,16 +145,16 @@
 
 ### Rate limiting
 
-**Current state:** No rate limiting on any route. This is a known prototype gap.
+**Current state (v0.4):** In-memory rate limiting is implemented across registration, challenge, and recovery routes. The limiter resets on server restart — a known gap.
 
-**Risk:** Spam registrations, challenge flooding, brute-force editToken guessing.
+**Implemented limits:**
+- Registration (`POST /api/identities`): max 3 per IP per hour
+- Challenge (`POST /api/verify/challenge`): max 5 active challenges per handle per day
+- Recovery (`POST /api/identities/[handle]/recover`): max 5 per IP per hour
 
-**Planned (v0.4):**
-- In-memory per-IP rate limiter for registration: max 3 per hour
-- Per-handle challenge limit: max 5 active challenges per day
-- editToken attempt counter with exponential backoff
+**Remaining gap:** Rate limiter state is in-process memory — a server restart (e.g., Railway deploy) resets all counters. Burst abuse is possible in the window after any deploy.
 
-**Production target:** Redis-backed middleware or edge rate limiting.
+**Production target:** Redis/Upstash-backed middleware or edge rate limiting (Sprint 4).
 
 ---
 
@@ -163,24 +164,29 @@
 - [x] Reserved handles block route paths and brand names
 - [x] Challenge codes expire (8h, tracked via `expiresAt`)
 - [x] Attempt counter on challenges (max 5)
-- [x] `publicIdentity()` strips all private fields
+- [x] `publicIdentity()` strips all private fields (including `proofUrl` from social proofs)
 - [x] editToken never returned in GET responses
 - [x] RDD address format validation (legacy + SegWit)
 - [x] Agent revocation as first-class operation
-- [x] Soft-delete pattern for wallets, agents, proofs
+- [x] Soft-delete pattern for wallets, agents, social proofs
+- [x] **editToken expiry** — 30-day enforcement via `checkEditToken()` on all mutation routes
+- [x] **Atomic writes** — `writeDb()` uses tmp → `renameSync` pattern
+- [x] **Handle recovery** — `revocationKey` issued at registration; `POST /api/identities/[handle]/recover` flow implemented
+- [x] **Token reissue** — `POST /api/identities/[handle]/token` with expired token support
+- [x] **Rate limiting** — in-memory; registration 3/IP/hr, recovery 5/IP/hr, challenges 5/handle/day
+- [x] **Social proof revocation** — `DELETE /api/identities/[handle]/socials/[platform]` soft-deletes proof; filtered from all public responses
+- [x] **proofUrl privacy** — `proofUrl` stored for future server-side verification; stripped from all public API responses via `publicIdentity()`
 
 ### Partial / scaffold only
-- [ ] editToken expiry enforcement — `editTokenCreatedAt` stored; expiry not enforced
 - [ ] Nonce/timestamp in wallet signing challenges — fields designed, verification not implemented
 - [ ] Agent credential validation — `controllerKey` stored; not cryptographically checked
-- [ ] Rate limiting — in-memory placeholder; no Redis
+- [ ] Rate limiting persistence — in-memory limiter resets on server restart; no Redis
 
 ### Not yet implemented
-- [ ] Abuse/impersonation reporting endpoint
+- [ ] Abuse/impersonation reporting endpoint (route exists at `/api/report`; no admin review surface)
 - [ ] Admin moderation surface
-- [ ] Handle recovery mechanism
 - [ ] Real wallet signature verification
-- [ ] Social proof auto-verification (platform API)
+- [ ] Social proof auto-verification — server-side URL fetch + challenge code check (Sprint 3, S3-01)
 - [ ] CSRF protection (low risk for this architecture; no session cookies)
 - [ ] Audit logging for security-sensitive events
 
@@ -209,8 +215,8 @@
 | Website | Yes | Optional, public |
 | RDD wallet address | Yes | Public (if visibility = public) |
 | Social proof username | Yes | Public (if visibility = public) |
-| Social proof URL | Yes | URL of public post — already public |
-| editToken | Yes (hashed?) | Never returned in GET. v0.3: stored as plain hex. Future: hash. |
+| Social proof URL (`proofUrl`) | Yes | Stored for future server-side verification (S3-01). **Stripped from all public API responses** (S3-08). Not exposed in GET /api/identities/[handle]. |
+| editToken | Yes (plain hex) | Never returned in GET. 30-day expiry enforced. Future: bcrypt hash. |
 | IP address | No | Not logged |
 | Email address | No | Not collected |
 | Private key | Never | Not requested, not stored |
@@ -228,11 +234,14 @@
 - [x] No cookies used
 - [x] No analytics in codebase
 
+### Implemented
+- [x] Data export endpoint — `POST /api/identities/[handle]/export` with editToken — returns full identity JSON
+- [x] Delete/deactivate endpoint — `DELETE /api/identities/[handle]` with editToken + confirmation string
+- [x] Privacy page at `/privacy` (in-app)
+- [x] Terms of use at `/terms` (in-app)
+
 ### Designed / scaffold
-- [ ] Data export endpoint — `GET /api/identities/[handle]/export` with editToken
-- [ ] Delete/deactivate endpoint — `DELETE /api/identities/[handle]` with editToken
-- [ ] Privacy page at `/privacy` (in-app)
-- [ ] Terms of use at `/terms` (in-app)
+- [ ] Frontend UI for "Export my data" and "Delete account" on /edit/[handle] page
 
 ### Deferred
 - [ ] GDPR-compliant data processing record

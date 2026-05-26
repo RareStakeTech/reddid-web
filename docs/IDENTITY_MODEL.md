@@ -1,7 +1,7 @@
 # ReddID Identity Model
 
 **Version:** 2 (prototype)  
-**Last updated:** 2026-05-25
+**Last updated:** 2026-05-26
 
 This document specifies the full data model for ReddID identities, including wallets, social proofs, agents, revocation, and visibility controls. It represents the **target model** for the v0.4 refactor. Fields marked `[v2]` are new relative to the v0.1 schema.
 
@@ -59,14 +59,17 @@ interface Identity {
   agents: AgentIdentity[];             // [v2] child agent records
 
   // ── Revocation ─────────────────────────────────────────────────────
-  revocationKey: string | null;        // [v2] pubkey authorised to revoke
+  revocationKey: string | null;        // [v2] SHA-256 hash of 64-char hex recovery key
+  // plaintext shown ONCE at registration; used via POST /api/identities/[handle]/recover
+  // Null for identities registered before Sprint 1 (v0.4.20)
   revokedAt: string | null;            // [v2] ISO timestamp
   revokedReason: string | null;        // [v2] public disclosure
 
   // ── Authentication ─────────────────────────────────────────────────
   editToken: string;                   // 16-char hex; localStorage-based; single-device
-  editTokenCreatedAt: string;          // [v2] for future rotation/expiry
+  editTokenCreatedAt: string;          // [v2] 30-day expiry enforced via checkEditToken()
   // NOTE: editToken is NEVER used for agent operations.
+  // NOTE: editToken expires after 30 days; POST /api/identities/[handle]/token re-issues.
   // Future: authMethods[] for multi-device and agent credential support.
 
   // ── Verification state ─────────────────────────────────────────────
@@ -175,6 +178,8 @@ interface SocialProof {
   username: string;                    // claimed handle on that platform
   proofMethod: ProofMethod;
   proofUrl: string | null;             // URL where proof was posted
+  // NOTE: proofUrl is stored for future server-side verification (S3-01 / Sprint 3).
+  // It is NEVER exposed in public API responses — stripped by publicIdentity() serializer.
   proofSignature: string | null;       // future: cryptographic signature
   verificationStatus: VerificationStatus;
   verifiedAt: string | null;           // when verification succeeded
@@ -182,6 +187,9 @@ interface SocialProof {
   visibility: VisibilityLevel;         // controls public API exposure
   addedAt: string;
 }
+
+// Public-facing type: proofUrl always stripped
+type PublicSocialProof = Omit<SocialProof, 'proofUrl'>;
 ```
 
 ### Verification state machine
@@ -355,7 +363,7 @@ Soft-delete. Sets `revokedAt` and `revokedReason`. Revoked agents are not shown 
 
 ### Social proof revocation
 
-Owner sets `verificationStatus: 'revoked'`. Proof is removed from public profile. The underlying social account is not affected.
+Owner calls `DELETE /api/identities/[handle]/socials/[platform]` (requires editToken). The store calls `removeSocialProof()`, which soft-deletes by setting `verificationStatus: 'revoked'`. The record is retained for audit. Revoked proofs are filtered from all public API responses by `publicIdentity()`. The underlying social account is not affected and can be re-added with a fresh challenge if desired.
 
 ---
 
@@ -383,6 +391,7 @@ Strips from all public API responses:
 - `revocationKey`
 - All wallets where `visibility !== 'public'` or `revokedAt !== null`
 - All social proofs where `visibility !== 'public'` or `verificationStatus === 'revoked'`
+- `proofUrl` from every social proof (exposed as `PublicSocialProof[]` — proofUrl stored server-side only)
 - All agent fields except: `displayHandle`, `agentType`, `displayPurpose`, `allowedActions`, `expiresAt`
 - Replaces `agents[]` with `agentCount: number` (full list at `/[handle]/agents`)
 
