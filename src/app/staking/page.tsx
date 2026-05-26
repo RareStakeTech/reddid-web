@@ -35,23 +35,27 @@ export default function StakingPage() {
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '40px 20px' }}>
 
-      {/* ── Estimate Only banner ── */}
+      {/* ── Estimate + Not Financial Advice banner — per audit ISSUE-013 ── */}
       <div
         style={{
-          background: 'rgba(96,165,250,0.06)',
-          border: '1px solid rgba(96,165,250,0.25)',
-          borderRadius: 8,
-          padding: '10px 16px',
+          background: 'rgba(251,191,36,0.06)',
+          border: '1px solid rgba(251,191,36,0.3)',
+          borderRadius: 10,
+          padding: '14px 20px',
           marginBottom: 28,
           display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: '0.8rem',
-          color: '#7eaacc',
+          alignItems: 'flex-start',
+          gap: 10,
         }}
       >
-        <span style={{ fontWeight: 700 }}>Estimate Only — Not Connected to Live Staking.</span>
-        {' '}All figures are illustrative arithmetic. Actual PoSV rewards depend on live network weight.
+        <span style={{ fontSize: '1.1rem', lineHeight: 1, marginTop: 1, flexShrink: 0 }}>⚠</span>
+        <div style={{ fontSize: '0.78rem', color: '#b38c10', lineHeight: 1.65 }}>
+          <span style={{ fontWeight: 700, color: '#d4a017' }}>Educational estimate only — not financial advice.</span>{' '}
+          PoSV staking returns vary with network conditions, your coin age, and total network stake weight.
+          All figures shown are illustrative arithmetic, not connected to live staking data.
+          Past staking performance does not guarantee future results.
+          Consult a qualified financial adviser before making any investment decisions.
+        </div>
       </div>
 
       {/* Header */}

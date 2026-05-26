@@ -42,7 +42,7 @@ const LEVEL_CONFIG: Record<TrustLevel, LevelConfig> = {
     color: '#60a5fa',
     bg:    'rgba(96,165,250,0.10)',
     border:'rgba(96,165,250,0.25)',
-    tooltip: 'Verified via a public challenge post on the linked platform.',
+    tooltip: 'User posted a verification code to their profile and provided the URL. The URL is stored on record. In v0.4, this is trust-based — ReddID does not independently fetch or confirm the post. Platform API verification ships in v0.5.',
   },
   'wallet-signature-verified': {
     label: 'Wallet Verified',

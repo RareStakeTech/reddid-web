@@ -135,23 +135,31 @@ export default function ReservePage() {
   return (
     <div style={{ maxWidth: 840, margin: '0 auto', padding: '48px 20px' }}>
 
-      {/* ── Not Live banner ── */}
+      {/* ── DEMO DATA banner — prominent amber per audit ISSUE-005 ── */}
       <div
         style={{
-          background: 'rgba(136,136,136,0.07)',
-          border: '1px solid rgba(136,136,136,0.25)',
-          borderRadius: 8,
-          padding: '10px 16px',
+          background: 'rgba(251,191,36,0.08)',
+          border: '1px solid rgba(251,191,36,0.4)',
+          borderRadius: 10,
+          padding: '14px 20px',
           marginBottom: 32,
           display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: '0.8rem',
-          color: '#888',
+          alignItems: 'flex-start',
+          gap: 10,
         }}
       >
-        <span style={{ fontWeight: 700 }}>Not Live — Placeholder Data.</span>
-        {' '}The reserve dashboard below shows zeros. Real figures will appear when the bridge is operational.
+        <span style={{ fontSize: '1.1rem', lineHeight: 1, marginTop: 1, flexShrink: 0 }}>⚠</span>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#d4a017', marginBottom: 3 }}>
+            DEMO DATA — Reserve Not Live
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#b38c10', lineHeight: 1.6 }}>
+            All figures on this page are placeholder zeros.{' '}
+            <strong style={{ color: '#d4a017' }}>No funds are held. No bridge exists yet.</strong>{' '}
+            This page explains the design of the future reserve model.
+            Live reserve data will appear here once ReddRail and Gajumaru Associate Chain integration launches (expected Q3/Q4 2026).
+          </div>
+        </div>
       </div>
 
       {/* Header */}
